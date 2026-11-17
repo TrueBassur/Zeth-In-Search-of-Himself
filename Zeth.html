@@ -300,9 +300,9 @@ function startL7(){
    applause.pause();applause.currentTime=0;
    const idx=S.inv.indexOf('rub5');
    if(idx>=0)S.inv.splice(idx,1);
-   say('Кондуктор: "Так, граждане пассажиры. Оплачиваем проезд."', 800, 80);
+   say('Кондуктор: "Так, граждане пассажиры. Оплачиваем проезд. С вас 25 рублей."', 800, 80);
  }else{
-   say('Кондуктор: "Оплачиваем проезд."', 800, 80);
+   say('Кондуктор: "Оплачиваем проезд. С вас 25 рублей."', 800, 80);
  }
 }
 
@@ -529,7 +529,7 @@ function useItem(h,x,y){
        if(h=='rub5'){
          if(S.busPaid){say('Кондуктор: "Проезд уже оплачен."', 800, 80);return}
          if(S.rub<25){
-           say(S.concertDone?'Кондуктор: "Ты хорошо сыграл. Но проезд всё равно стоит дороже."':'Кондуктор: "Этого мало!"', 800, 80);
+           say(S.concertDone?'Кондуктор: "Ты хорошо сыграл. Но проезд всё равно стоит 25 рублей."':'Кондуктор: "Этого мало! Проезд стоит 25 рублей!"', 800, 80);
            return;
          }
          S.rub-=25;
@@ -594,7 +594,7 @@ function zoneClick(z){
      if(S.conductorClicks===1){
        say('Кондуктор: "Какая договорённость? Какая старушка с остановки? Никто мне ничего не говорил!"', 800, 80);
      }else{
-       say('Кондуктор: "Молодой человек! Оплачиваем проезд или на следующей остановке вас встретит милиция!"', 800, 80);
+       say('Кондуктор: "Молодой человек! Оплачиваем проезд — 25 рублей — или на следующей остановке вас встретит милиция!"', 800, 80);
        S.queue.push({t:'Нехорошая ситуация! Надо что-то придумывать и срочно...',cx:S.px-50,cy:100});
      }
      return;
@@ -1044,11 +1044,13 @@ function clickChord(x,y){
  if(c.solved)return;
  for(const b of CHORD_BTNS){
    if(x>b.x-65&&x<b.x+65&&y>620&&y<700){
-     const zone=360;
-     const near=c.notes.find(n=>!n.hit&&Math.abs(n.x-zone)<65);
-     if(near&&near.type===b.n&&b.n===c.seq[c.target]){
-       near.hit=true;
-       c.notes=c.notes.filter(n=>n!==near);
+     // Активная зона шире самого аккорда: засчитываем любое пересечение
+     // прямоугольника ноты (ширина 90) с зоной (310..410).
+     const noteHalf=45;
+     const inZone=c.notes.find(n=>!n.hit&&n.x+noteHalf>310&&n.x-noteHalf<410);
+     if(inZone&&inZone.type===b.n&&b.n===c.seq[c.target]){
+       inZone.hit=true;
+       c.notes=c.notes.filter(n=>n!==inZone);
        c.score++;
        c.target=(c.target+1)%4;
        c.feedback='+1';
