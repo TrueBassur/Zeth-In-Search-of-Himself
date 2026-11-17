@@ -1,7 +1,6 @@
 # Зет в поисках себя
 <img width="1402" height="1122" alt="logo" src="https://github.com/user-attachments/assets/6d4c5ae3-4f48-4b5d-ac7a-232a16170eff" />
-<img width="1402" height="1122" alt="file_00000000018081f49d81b4281f9566a5" src="https://github.com/user-attachments/assets/5c8b2985-7abd-4697-8a56-df208a6335f5" />
-
+<img width="1402" height="1122" alt="gameplay" src="https://github.com/user-attachments/assets/8807fde4-bbcf-466c-b787-5c63906c6bb4" />
 
 Поэтический квест-приключение в стиле ленинградского рока, реализованный как одностраничная HTML5/Canvas-игра на чистом JavaScript. Игрок следует за главным героем Зетом через локации собирая предметы и решая головоломки, чтобы «найти себя».
 
