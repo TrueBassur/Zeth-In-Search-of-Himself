@@ -1,0 +1,1333 @@
+<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><title>Зет в поисках себя</title>
+<style>html,body{margin:0;height:100%;background:#000;overflow:hidden;cursor:none}canvas{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);cursor:none}</style></head>
+<body><canvas id="c" width="1152" height="922"></canvas>
+<script>
+const W=1152,H=922,cv=document.getElementById('c'),g=cv.getContext('2d');
+const SRC={logo:'logos/logo',cursor:'icons/cursor',guitar:'icons/guitar',key:'icons/key1',matches:'icons/firesticks',cigarette:'icons/cigarette',texts:'icons/texts',voice:'icons/voice',dirtbottle:'icons/dirtbottle',cleanbottle:'icons/cleanbottle',hanky:'icons/hanky',basbook:'icons/basbook',screwdriver:'icons/screwdriver',brokenmediator:'icons/brokenmediator',mediator:'icons/mediator',rub5:'icons/5rub',front:'character/front',left1:'character/left1',left2:'character/left2',right1:'character/right1',right2:'character/right2'};
+const IMG={};
+const A=(u,v,l)=>{const a=new Audio(u);a.volume=v;a.loop=l;return a};
+const music=A('music/main_theme.mp3',.7,true),tick=A('sounds/clock-tick.mp3',.6,true),eve=A('sounds/backyard-evening.mp3',.7,true),step=A('sounds/step.mp3',.6,true),drip=A('sounds/kapli.mp3',1,true),streetMusic=A('sounds/street.mp3',.7,true),theme2=A('music/theme2.mp3',.7,true),busSnd=A('sounds/autobus.mp3',.7,true);
+const tsoy=A('music/tsoy.mp3',1.0,false),letov=A('music/letov.mp3',1.0,false),applause=A('sounds/applause.mp3',.8,false);
+const load=u=>new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>{console.warn('Нет файла',u);r(i)};i.src=u});
+let mv=.7,mt=.7;
+function ensureMusic(){const t=(S.scene=='l6'||S.scene=='l7')?theme2:music;if(t.paused)t.play().catch(()=>{})}
+['pointerdown','keydown','touchstart'].forEach(e=>addEventListener(e,ensureMusic));
+const SX=[90,195,300,405,510,650,757,865,972],SY=810;
+
+const S={
+    scene:'splash',inv:['guitar'],found:{},held:null,bubble:null,bubbleCX:undefined,bubbleCY:undefined,
+    mx:0,my:0,down:false,px:150,tx:150,dir:1,walk:0,fade:null,last:0,
+    queue:[],hpDrag:null,hpFixed:false,busReady:false,guySmoked:false,l6seen:false,puzzleKind:null,hp:null,
+    puzzleActive:false, puzzleSolved:false, screwdriver_broken:false, key_in_puzzle:false,
+    busPaid:false,needSeat:false,rub:0,seatMoney:false,busGivers:{},conductorClicks:0,l7Started:false,
+    tsoyStarted:false,tsoyComplete:false,tsoyPlaying:false,chordSolved:false,concertPlaying:false,concertDone:false,chord:null
+};
+
+const puzzleGrid = Array.from({length: 9}, () => Array.from({length: 9}, () => ({t:0, r:0})));
+
+function initPuzzle() {
+    const types = [1, 1, 1, 2, 2, 3, 4]; 
+    for(let y=0; y<9; y++) for(let x=0; x<9; x++) {
+        puzzleGrid[y][x] = {t: types[Math.floor(Math.random()*types.length)], r: Math.floor(Math.random()*4)};
+    }
+    
+    puzzleGrid[0][0] = {t:5, r:0}; 
+    puzzleGrid[0][1] = {t:3, r:0}; 
+    puzzleGrid[0][2] = {t:2, r:1}; 
+    puzzleGrid[1][2] = {t:1, r:1}; 
+    puzzleGrid[2][2] = {t:3, r:1}; 
+    puzzleGrid[2][3] = {t:1, r:0}; 
+    puzzleGrid[2][4] = {t:2, r:1}; 
+    puzzleGrid[3][4] = {t:1, r:1}; 
+    puzzleGrid[4][4] = {t:3, r:1}; 
+    puzzleGrid[4][5] = {t:1, r:0}; 
+    puzzleGrid[4][6] = {t:2, r:1}; 
+    puzzleGrid[5][6] = {t:1, r:1}; 
+    puzzleGrid[6][6] = {t:3, r:2}; 
+    puzzleGrid[6][5] = {t:1, r:0}; 
+    puzzleGrid[6][4] = {t:2, r:1}; 
+    puzzleGrid[7][4] = {t:1, r:1}; 
+    puzzleGrid[8][4] = {t:3, r:2}; 
+    puzzleGrid[8][3] = {t:1, r:0}; 
+    
+    puzzleGrid[8][2] = {t:8, r:0}; 
+    puzzleGrid[8][1] = {t:8, r:0}; 
+    puzzleGrid[8][0] = {t:6, r:0}; 
+
+    puzzleGrid[1][1] = {t:2, r:0};
+    puzzleGrid[2][1] = {t:1, r:1};
+    puzzleGrid[3][1] = {t:3, r:0};
+    puzzleGrid[3][2] = {t:1, r:0};
+    puzzleGrid[3][3] = {t:2, r:2};
+    puzzleGrid[4][3] = {t:2, r:1};
+    puzzleGrid[5][3] = {t:1, r:1};
+    puzzleGrid[6][3] = {t:2, r:1};
+    puzzleGrid[7][3] = {t:2, r:0};
+    puzzleGrid[8][3] = {t:2, r:0}; 
+    
+    S.puzzleSolved = false;
+    S.key_in_puzzle = false;
+    S.inv = S.inv.filter(item => item !== 'key'); 
+    if(S.found.key) S.inv.push('key');
+}
+
+const HOTSPOTS=[ 
+ ['key',800,700,48,'А вот и путь к свободе из своего спокойствия.'],
+ ['cigarette',562,440,22,'Так вот куда я её уронил.'],
+ ['matches',493,535,35,'Ну спички у меня всегда с собой.'],
+ ['matches',596,549,35,'Ну спички у меня всегда с собой.'],
+ ['texts',557,144,78,'Бумага под одеждой хорошо согревает.']];
+const SELF={key:'Да, определённо это ключ от моего дома.',cigarette:'Закурить? Хорошая идея. Но зачем?',texts:'Свои тексты я помню наизусть, а записи не для меня.',matches:'Не буду тратить источник огня впустую.',guitar:'Пальцы болят, пожалуй не буду.',basbook:'Читал давненько. Бассуров уже давно на комиксы перешёл и видео.',screwdriver:'ГОСТ 17199-88.',brokenmediator:'Кто его так изогнул? Я даже не могу разогнуть обратно.',mediator:'Хороший медиатор. И для гитары сгодится, и корпус вскрыть.',dirtbottle:'Я вчера её не стал пить грязную и сейчас не стану.',cleanbottle:'У меня много дел, выпивка может и подождать.',wethanky:'Мокрый платок мне сейчас ни к чему.'};
+const NOPE='Похоже это не сюда';
+const H2=[
+ {id:'bin',t:'r',a:[22,478,95,668]},{id:'bench',t:'r',a:[838,525,985,612]},{id:'tunnel',t:'r',a:[885,360,1055,600]},{id:'door',t:'r',a:[90,310,190,595]},
+ {id:'poster',t:'r',a:[1055,385,1122,497],say:'Афиша десятилетней давности. Какая-то забытая звезда 90-х приехать должна была.'},
+ {id:'manhole',t:'e',a:[965,702,78,24],say:'Дурно пахнет оттуда.'},{id:'bike',t:'r',a:[218,388,284,497],say:'Уважаемые жильцы! Розыскивается велосипед Puky украденный с четвёртого этажа.'},
+ {id:'window',t:'r',a:[288,203,377,392],say:'А там молодая семья ужинают вместе за столом...'},{id:'lamp',t:'r',a:[735,85,782,655],say:'Единственный источник яркого света здесь.'},
+ {id:'lamp',t:'e',a:[845,105,45,28],say:'Единственный источник яркого света здесь.'},{id:'tree',t:'r',a:[398,25,700,200],say:'Осень здесь. Не люблю осень...'},
+ {id:'tree',t:'r',a:[398,200,472,385],say:'Осень здесь. Не люблю осень...'},{id:'houses',t:'r',a:[560,180,722,385],say:'Счастливые светящиеся окна, счастливых людей вестимо.'},
+ {id:'houses',t:'r',a:[840,110,1130,262],say:'Счастливые светящиеся окна, счастливых людей вестимо.'}];
+const POSTERS='Различные объявления для различных людей.',DRIPS='Кап-кап-кап... Пытка была такая китайская.',LAMP3='Фонарь отражается от лужи и дополняет светом этот тёмный уголок.';
+const H3=[
+ {id:'drips',t:'r',a:[674,412,702,582],say:DRIPS},{id:'pipe',t:'r',a:[626,25,694,415],say:'Дождь кончился два дня назад. Откуда вода льётся?'},
+ {id:'lamp',t:'r',a:[700,55,835,140],say:LAMP3},{id:'puddle',t:'e',a:[705,598,85,28],say:'Свет фонаря отражается от лужи. Вода, похоже, чистая.'},
+ {id:'figure',t:'e',a:[467,657,180,60],say:''},{id:'bin3',t:'r',a:[22,428,122,680]},
+ {id:'ad',t:'r',a:[75,82,182,245],say:POSTERS},{id:'ad',t:'r',a:[57,288,158,423],say:POSTERS},{id:'ad',t:'r',a:[503,228,580,350],say:POSTERS},
+ {id:'ad',t:'r',a:[506,166,548,230],say:POSTERS},{id:'ad',t:'r',a:[230,308,276,362],say:POSTERS},{id:'ad',t:'r',a:[428,383,477,441],say:POSTERS},
+ {id:'ad',t:'r',a:[695,266,760,326],say:POSTERS},{id:'wall',t:'r',a:[235,170,480,360],say:'Нет ничего более постоянного чем временное...'},
+ {id:'crate',t:'r',a:[115,515,308,650],say:'Такое ощущение что он всегда здесь стоял.'},{id:'poster',t:'r',a:[1066,230,1132,470],say:'Очередной агитплакат от депутата обещавшего всё здесь отремонтировать. Он победил на выборах, кстати.'}];
+
+const H4 = [
+ {id:'box', t:'r', a:[130, 620, 240, 720], say:'Днём здесь бабушка торгует семечками, а вечером Анатолич заявляет свои права на территорию'},
+ {id:'trash_bin', t:'r', a:[960, 640, 1080, 740], say:'Ну у нас тут бутылки от компании Анатолича'},
+ {id:'men', t:'r', a:[40, 380, 340, 730], say:'Дарова Зет. Выручай! Светофор не работает. А пиво уже заканчивается!'},
+ {id:'traffic_light', t:'r', a:[480, 120, 540, 330], say:'Что ж, советская техника наконец-то сломалась. Надо поискать, где щиток у светофора.'},
+ {id:'pole_base', t:'r', a:[405, 520, 450, 640], say:'Здесь пластина прикручена советскими болтами'},
+ {id:'road', t:'r', a:[350, 450, 1100, 650], say:'Вроде вечер, а их как прорвало. Не перебежать'},
+ {id:'shop', t:'r', a:[610, 330, 870, 480], say:'Народный магазин для страждущих о вечернем досуге. И не только вечернем'},
+ {id:'tree', t:'r', a:[200, 50, 300, 450], say:'Совсем листьев нет. А ведь совсем недавно было зелено'},
+ {id:'lamp', t:'r', a:[840, 50, 940, 350], say:'Ну хоть освещение нынче не подводит'},
+ {id:'houses', t:'r', a:[600, 100, 1100, 300], say:'Всегда успокаивает свет в окне домов. Люди здесь...'},
+ {id:'screwdriver_ground', t:'r', a:[340, 670, 390, 720], say:'Отвёртка! Откуда она тут?'}
+];
+
+const H5 = [
+ {id:'men', t:'r', a:[630, 420, 900, 720], say:'Спасибо Зет! Спас нас от «засухи»!'},
+ {id:'traffic_light', t:'r', a:[480, 120, 540, 330], say:'Тем и хороши старые технологии - они ремонтопригодные'},
+ {id:'pole_base', t:'r', a:[405, 580, 450, 700], say:'Здесь пластина прикручена советскими болтами'},
+ {id:'road', t:'r', a:[350, 450, 1100, 650], say:'Теперь дорога пуста. Никто не хочет стоять на светофоре'},
+ {id:'shop', t:'r', a:[610, 330, 870, 480], say:'Народный магазин для страждущих о вечернем досуге. И не только вечернем'},
+ {id:'lamp', t:'r', a:[840, 50, 940, 350], say:'Ну хоть освещение нынче не подводит'},
+ {id:'houses', t:'r', a:[600, 100, 1100, 300], say:'Всегда успокаивает свет в окне домов. Люди здесь...'}
+];
+
+const NPCN={man:'Дядя',granny:'Бабушка',guy:'Парень'},NPCX={man:230,granny:430,guy:700};
+function npc(w,t){say(NPCN[w]+': "'+t+'"',NPCX[w]-50,90)}
+const H6=[
+ {id:'man',t:'r',a:[345,275,470,640]},
+ {id:'granny',t:'r',a:[570,390,690,620]},
+ {id:'guy',t:'r',a:[835,320,950,620]},
+ {id:'bin_stop',t:'r',a:[180,455,285,640]},
+ {id:'sign',t:'r',a:[1010,20,1110,200],say:'Знак остановка. Обычно обозначает то, что здесь останавливается общественный транспорт.'},
+ {id:'sign',t:'r',a:[1055,200,1095,610],say:'Знак остановка. Обычно обозначает то, что здесь останавливается общественный транспорт.'},
+ {id:'houses',t:'r',a:[265,20,1000,140],say:'Эхх. Хорошо им, никуда идти не надо.'},
+ {id:'ads',t:'r',a:[285,255,830,420],say:'Объявления: куплю, продам, ищу работу. Люди ищут выход как могут.'}
+];
+
+const H7=[
+ {id:'conductor',t:'r',a:[800,210,935,720]},
+ {id:'man',t:'r',a:[20,280,240,650]},
+ {id:'womanRed',t:'r',a:[285,300,480,620]},
+ {id:'oldMan',t:'r',a:[500,320,700,620]},
+ {id:'sleepingAunt',t:'r',a:[935,300,1075,625]},
+ {id:'signRides',t:'r',a:[50,15,340,125],say:'Действительно. Сидячих мест стало больше. Или людей стало меньше.'},
+ {id:'signBread',t:'r',a:[400,45,600,170],say:'Сейчас такой хлеб, что даже свежий на вкус как позавчерашний.'},
+ {id:'signApteka',t:'r',a:[600,80,800,200],say:'Хорошо что мне не нужно посещать данное заведение... Пока...'},
+ {id:'signRoute',t:'r',a:[950,185,1060,312],say:'Ну а как же без улицы Ленина в провинциальном городе?'},
+ {id:'lamp',t:'r',a:[800,10,930,90],say:'Тусклый жёлтый свет создаёт дополнительную атмосферу поездке'},
+ {id:'handrail',t:'r',a:[735,180,800,720],say:'Спасительное средство чтобы не упасть в автобусе. Судя по чистоте, мылся последний раз примерно никогда'},
+ {id:'window',t:'r',a:[80,170,400,360],say:'Люблю вечерний город, сел бы и смотрел пока еду, но надо решать вопрос с оплатой за проезд'},
+ {id:'window2',t:'r',a:[430,150,740,300],say:'Люблю вечерний город, сел бы и смотрел пока еду, но надо решать вопрос с оплатой за проезд'},
+ {id:'seatA',t:'r',a:[150,535,300,625]},
+ {id:'seatB',t:'r',a:[478,520,528,615]},
+ {id:'seatC',t:'r',a:[712,520,830,620]}
+];
+
+function hit(L,x,y){for(const z of L){const a=z.a;if(z.t=='r'?(x>=a[0]&&x<=a[2]&&y>=a[1]&&y<=a[3]):(((x-a[0])/a[2])**2+((y-a[1])/a[3])**2<=1))return z}return null}
+function hit4(x,y){for(const z of H4){const a=z.a;if(z.t=='r'?(x>=a[0]&&x<=a[2]&&y>=a[1]&&y<=a[3]):(((x-a[0])/a[2])**2+((y-a[1])/a[3])**2<=1))return z}return null}
+function hit5(x,y){for(const z of H5){const a=z.a;if(z.t=='r'?(x>=a[0]&&x<=a[2]&&y>=a[1]&&y<=a[3]):(((x-a[0])/a[2])**2+((y-a[1])/a[3])**2<=1))return z}return null}
+
+const HINT='Соберите всё необходимое чтобы покинуть жилище. Вещи могут лежать не только на видном месте, но и в скрытых местах. Например карман.';
+let AC;
+function beep(){try{AC=AC||new AudioContext();const o=AC.createOscillator(),v=AC.createGain(),t=AC.currentTime;o.type='square';o.frequency.value=900;v.gain.setValueAtTime(.08,t);v.gain.exponentialRampToValueAtTime(.001,t+.06);o.connect(v);v.connect(AC.destination);o.start();o.stop(t+.07)}catch(e){}}
+
+function playChordSound(name) {
+    try {
+        AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+        if (AC.state === 'suspended') AC.resume();
+        const freqs = {
+            'Am': [220.00, 261.63, 329.63],
+            'F': [174.61, 220.00, 261.63],
+            'C': [130.81, 164.81, 196.00],
+            'E': [164.81, 207.65, 246.94]
+        };
+        const notes = freqs[name];
+        if (!notes) return;
+        const t = AC.currentTime;
+        notes.forEach(f => {
+            const o = AC.createOscillator(), v = AC.createGain();
+            o.type = 'triangle'; 
+            o.frequency.setValueAtTime(f, t);
+            v.gain.setValueAtTime(0.15, t);
+            v.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
+            o.connect(v); v.connect(AC.destination);
+            o.start(t); o.stop(t + 1.2);
+        });
+    } catch(e) {}
+}
+function playErrorSound() {
+    try {
+        AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+        if (AC.state === 'suspended') AC.resume();
+        const t = AC.currentTime;
+        const o = AC.createOscillator(), v = AC.createGain();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(150, t);
+        o.frequency.exponentialRampToValueAtTime(80, t + 0.3);
+        v.gain.setValueAtTime(0.2, t);
+        v.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+        o.connect(v); v.connect(AC.destination);
+        o.start(t); o.stop(t + 0.3);
+    } catch(e) {}
+}
+
+function drawImageSafe(img, ...args) { if (img && img.width > 0) g.drawImage(img, ...args); }
+
+async function init(){
+ try{const f=new FontFace('Amatic SC','url(fonts/AmaticSC-Regular.ttf)');document.fonts.add(await f.load())}catch(e){}
+ for(const k in SRC)IMG[k]=await load('images/'+SRC[k]+'.png');
+ IMG.back0=await load('images/backs/back0.jpg'); IMG.back1=await load('images/backs/back1.jpg');
+ IMG.back2=await load('images/backs/back2.jpg'); IMG.back3=await load('images/backs/back3.jpg');
+ IMG.back3n=await load('images/backs/back3n.jpg');
+ IMG.back4=await load('images/backs/back4.jpg'); IMG.back5=await load('images/backs/back5.jpg');
+ IMG.puzzle_bg=await load('images/puzzle_bg.jpg'); 
+ music.play().then(()=>{if(S.scene=='splash')S.scene='menu'}).catch(()=>{});requestAnimationFrame(loop);
+}
+function fit(){const k=Math.min(innerWidth/W,innerHeight/H);cv.style.width=W*k+'px';cv.style.height=H*k+'px'}
+addEventListener('keydown',()=>{if(S.scene=='splash')S.scene='menu'});
+addEventListener('resize',fit);fit();
+function pos(e){const r=cv.getBoundingClientRect();S.mx=(e.clientX-r.left)*W/r.width;S.my=(e.clientY-r.top)*H/r.height}
+addEventListener('mousemove',e=>{pos(e);hpMove()});
+addEventListener('mouseup',()=>{S.down=false;hpUp()});
+addEventListener('contextmenu',e=>e.preventDefault());
+addEventListener('mousedown',e=>{
+    pos(e);S.down=true;ensureMusic();if(S.fade)return;
+    
+    if(S.tsoyPlaying || S.concertPlaying) return;
+
+    if(S.bubble && S.queue.length){const q=S.queue.shift();say(q.t,q.cx,q.cy);if(q.fn)q.fn();return;}
+    
+    if(S.bubble) {
+        S.bubble = null;
+        S.bubbleCX = undefined;
+        S.bubbleCY = undefined;
+    }
+
+    if(S.puzzleActive){
+        if(S.my > 745) {
+            click(S.mx, S.my);
+        } else {
+            if(S.puzzleKind==='hp')hpDown(S.mx,S.my);
+            else if(S.puzzleKind==='chord')clickChord(S.mx,S.my);
+            else clickPuzzle(S.mx, S.my);
+        }
+        return;
+    }
+    
+    click(S.mx,S.my);
+});
+
+function say(t, cx, cy){
+    if(cx !== undefined) {
+        cx = Math.max(20, Math.min(W - 320, cx));
+    }
+    if(cy !== undefined) {
+        cy = Math.max(20, Math.min(H - 300, cy));
+    }
+    S.bubble=t; S.bubbleCX=cx; S.bubbleCY=cy;
+}
+function fadeTo(cb){S.fade={a:0,ph:1,cb}}
+function startL1(){S.scene='l1';mt=.12;tick.play().catch(()=>{});streetMusic.pause();}
+function startL2(px=150){S.scene='l2';tick.pause();drip.pause();streetMusic.pause();eve.play().catch(()=>{});S.px=px;S.tx=px;S.dir=1;S.held=null}
+function startL3(px=150){S.scene='l3';eve.pause();streetMusic.pause();drip.play().catch(()=>{});S.px=px;S.tx=px;S.dir=1;S.held=null}
+function startL4(px=150){S.scene='l4';eve.pause();drip.pause();streetMusic.play().catch(()=>{});S.px=px;S.tx=px;S.dir=1;S.held=null;}
+function startL5(px=150){S.scene='l5';theme2.pause();busSnd.pause();music.play().catch(()=>{});eve.pause();drip.pause();streetMusic.play().catch(()=>{});S.px=px;S.tx=px;S.dir=1;S.held=null}
+function startL6(){S.scene='l6';music.pause();busSnd.pause();theme2.play().catch(()=>{});eve.pause();drip.pause();streetMusic.play().catch(()=>{});S.px=100;S.tx=100;S.dir=1;S.held=null;
+ if(!S.l6seen){S.l6seen=true;say('Вот же напасть. А денег то у меня нет на проезд.', S.px - 50, 100)}}
+function startL7(){
+ S.scene='l7';
+ streetMusic.pause();
+ theme2.volume=.7;
+ theme2.play().catch(()=>{});
+ busSnd.volume=.7;
+ busSnd.play().catch(()=>{});
+ S.held=null;
+ S.px=450;
+ S.tx=450;
+ S.dir=1;
+
+ if(!S.l7Started){
+   S.l7Started=true;
+   S.conductorClicks=0;
+   S.rub=0;
+   S.seatMoney=false;
+   S.busGivers={man:false,womanRed:false,oldMan:false,sleepingAunt:false};
+   S.busPaid=false;
+   S.needSeat=false;
+   S.tsoyStarted=false;
+   S.tsoyComplete=false;
+   S.tsoyPlaying=false;
+   S.chordSolved=false;
+   S.concertPlaying=false;
+   S.concertDone=false;
+   S.puzzleActive=false;
+   S.puzzleKind=null;
+   S.chord=null;
+   tsoy.pause();tsoy.currentTime=0;
+   clearTimeout(S.tsoyTimer);
+   tsoy.onended = null;
+   letov.pause();letov.currentTime=0;
+   applause.pause();applause.currentTime=0;
+   const idx=S.inv.indexOf('rub5');
+   if(idx>=0)S.inv.splice(idx,1);
+   say('Кондуктор: "Так, граждане пассажиры. Оплачиваем проезд."', 800, 80);
+ }else{
+   say('Кондуктор: "Оплачиваем проезд."', 800, 80);
+ }
+}
+
+function addRub(n=1){
+ S.rub+=n*5;
+ if(S.rub>0&&!S.inv.includes('rub5'))S.inv.push('rub5');
+ beep();
+}
+function giveRub(id,text,cx,cy){
+ if(S.busGivers[id])return;
+ S.busGivers[id]=true;
+ addRub(1);
+ say(text,cx,cy);
+}
+function startTsoy(){
+  clearTimeout(S.tsoyTimer);
+  tsoy.onended = null;
+
+  const firstPlay = !S.tsoyStarted;
+
+  S.tsoyStarted = true;
+  S.tsoyPlaying = true;
+
+  theme2.volume = .05;
+  busSnd.volume = .35;
+
+  tsoy.pause();
+  tsoy.currentTime = 0;
+  tsoy.volume = 1.0;
+
+  const restoreAfterTsoy = () => {
+    S.tsoyPlaying = false;
+    busSnd.volume = .7;
+
+    if(S.scene === 'l7' && !S.puzzleActive){
+      theme2.volume = .25;
+      S.tsoyComplete = true;
+    }
+  };
+
+  if(firstPlay){
+    // Первый раз — трек играет полностью
+    tsoy.onended = () => {
+      restoreAfterTsoy();
+
+      if(S.scene === 'l7' && !S.puzzleActive){
+        say('Дед: "Что ты там брякаешь? Из-за автобуса ничего не слышно!"', 520, 100);
+      }
+    };
+
+    tsoy.play().catch(()=>{});
+  } else {
+    // Последующие разы — 5 секунд и дед перебивает
+    S.tsoyTimer = setTimeout(() => {
+      tsoy.pause();
+      tsoy.currentTime = 0;
+
+      restoreAfterTsoy();
+
+      if(S.scene === 'l7' && !S.puzzleActive){
+        say('Дед: "Плохо слышишь чтоль? Не слышно гитару, говорю!"', 520, 100);
+      }
+    }, 5000);
+
+    tsoy.play().catch(()=>{});
+  }
+}
+function startLetov(){
+ S.puzzleActive=false;
+ S.puzzleKind=null;
+ S.concertPlaying=true;
+ S.concertDone=false;
+ theme2.volume=0;
+ busSnd.volume=.35;
+ letov.currentTime=0;
+ letov.volume=1.0;
+ letov.play().catch(()=>{});
+ let finished=false;
+ const finish=()=>{
+   if(finished)return;finished=true;
+   S.concertPlaying=false;
+   busSnd.volume=.7;
+   S.concertDone=true;
+   applause.currentTime=0;
+   applause.play().catch(()=>{});
+   theme2.volume=.7;
+   say('Аплодисменты!', 400, 100);
+ };
+ letov.onended=finish;
+ setTimeout(finish,60000);
+}
+function initChordPuzzle(){
+ S.puzzleActive=true;
+ S.puzzleKind='chord';
+ S.chord={
+   notes:[],score:0,target:0,
+   seq:['Am','F','C','E'],
+   lastSpawn:0,speed:220,interval:1.15,
+   solved:false,feedback:'',time:0
+ };
+}
+
+function combine(h,o){
+ if([h,o].includes('mediator')&&[h,o].includes('guitar')){
+   if(S.scene!=='l7'){say(NOPE, S.px - 50, 100);return}
+   if(S.chordSolved){say('Я уже вспомнил эту мелодию.', S.px - 50, 100);return}
+   if(!S.tsoyComplete){say('Сначала надо сыграть, чтобы вспомнить мелодию...', S.px - 50, 100);return}
+   tsoy.pause();
+   tsoy.currentTime=0;
+   theme2.volume=.25;
+   initChordPuzzle();
+   say('Как там играется народная любимая песня? Надо быстро подобрать', S.px - 50, 100);
+   return;
+ }
+ if([h,o].includes('matches')&&[h,o].includes('brokenmediator')){
+  S.inv[S.inv.indexOf('brokenmediator')]='mediator';beep();
+  say('Подогрел над спичкой, и пластик размяк. Теперь медиатор можно выровнять. Им ведь не только на гитаре играют, но и разбирают пластиковые корпуса, как лопаточкой.', S.px - 50, 100);return}
+ const hk=[h,o].find(v=>v=='hanky'||v=='wethanky');
+ if(hk&&[h,o].includes('dirtbottle')){
+  if(hk=='wethanky'){
+    S.inv[S.inv.indexOf('dirtbottle')]='cleanbottle';
+    S.inv.splice(S.inv.indexOf('wethanky'), 1); 
+    say('Ну вот вчерашний слой грязи наконец убран. Платок изгваздался, выброшу его.', S.px - 50, 100);beep()
+  }
+  else say('Грязь присохла. Платок пачкается, а бутылка чище не становится.', S.px - 50, 100)
+ }else say(NOPE, S.px - 50, 100)
+}
+
+function useItem(h,x,y){
+ const sceneList = {l2:H2,l3:H3,l4:H4,l5:H5,l6:H6,l7:H7}[S.scene]||H5;
+ let z = hit(sceneList,x,y);
+ 
+ // Приоритет Зета в автобусе
+ if (S.scene === 'l7' && Math.abs(x - S.px) < 120 && y > 250 && y < 760) z = null;
+
+ const id=z&&z.id;
+ const self = Math.abs(x-S.px)<100 && y>330 && y<800;
+
+ if(S.scene==='l7' && h==='guitar'){
+   if(id==='conductor'){say('Кондуктор: "Ты ещё и гитару украл где-то?"', 800, 80);return}
+   if(id==='womanRed'){say('Женщина в красном: "Я не умею играть."', 320, 100);return}
+   if(id==='oldMan'){say('Дед: "Трень-брень, я уже разучился играть."', 520, 100);return}
+   if(id==='man'){say('Самозабвенно переписывается в национальном месенджере.', 50, 100);return}
+   if(id==='sleepingAunt'){say('Человек мирно дремлет на заднем сиденье. Ни к чему будить...', 830, 100);return}
+   startTsoy();
+   return;
+ }
+
+ if(z){
+   if(S.scene=='l4'){
+     if(id=='men'){
+       if(h=='cigarette') say('Алкоголики: "О! Покурить угощают!" Зет: "Нет уж, последнюю сигарету попридержу у себя".', 300, 150);
+       else if(h=='texts') say('Алкоголики: "Нет. Такое не читаем!"', 300, 150);
+       else if(h=='key') say('Алкоголики: "А что он открывает? Сейф с деньгами?"', 300, 150);
+       else if(h=='matches') say('Зет: "Не буду тратить последний источник огня".', 300, 150);
+       else if(h=='basbook') { say('Анатолич: "О! Моя книга нашлась! Спасибо! Жаль не вижу закладку-отвёртку".', 300, 150); S.inv.splice(S.inv.indexOf('basbook'),1); S.found.screwdriver_ground = true; beep(); }
+       else say(NOPE, 300, 150);
+       return;
+     }
+     if(id=='pole_base' && h=='screwdriver'){
+       S.inv.splice(S.inv.indexOf('screwdriver'), 1);
+       S.screwdriver_broken = true;
+       S.puzzleActive = true;
+       beep();
+       say('Это была поддельная отвёртка, она сломалась, но щиток открутили', S.px - 50, 100);
+       return;
+     }
+   }
+   if(S.scene=='l5'){
+     if(id=='men'){
+       if(h=='guitar') say('Теперь около магазина они не отстанут от меня с гитарой. Лучше не буду.', 300, 150);
+       else if(h=='cigarette') say('Алкоголики: "О! Покурить угощают!" Зет: "Нет уж, последнюю сигарету попридержу у себя".', 300, 150);
+       else if(h=='texts') say('Алкоголики: "Нет. Такое не читаем!"', 300, 150);
+       else if(h=='key') say('Алкоголики: "А что он открывает? Сейф с деньгами?"', 300, 150);
+       else if(h=='matches') say('Зет: "Не буду тратить последний источник огня".', 300, 150);
+       else say(NOPE, 300, 150);
+       return;
+     }
+   }
+   if(S.scene=='l6'){
+     const noHead='Он в наушниках. Не слышит. Или делает вид что не слышит.';
+     if(id=='man'){
+       if(h=='guitar') npc('man','А Кукушку можешь сыграть? Нет? Жаль.');
+       else if(h=='cigarette') npc('man','Не, не курю.');
+       else if(h=='texts') npc('man','Извини, не люблю стихи.');
+       else say(NOPE);
+       return;
+     }
+     if(id=='granny'){
+       if(h=='guitar') npc('granny','Эххх. А дед то молодой когда был, романсы мне пел. Не береди душу бабушке инструментом.');
+       else if(h=='cigarette') npc('granny','Ты что, милок? Убери эту гадость от меня!');
+       else if(h=='texts') npc('granny','Стихи - это хорошо. Дед мне писал когда-то их. Милая моя, радость дорогая... Эххх.');
+       else say(NOPE);
+       return;
+     }
+     if(id=='guy'){
+       if(h=='guitar'){ say('Зачем ему аналоговая музыка, у него своя, цифровая.', 650, 100); return; }
+       if(h=='cigarette'){
+         if(!S.guySmoked){ S.inv.splice(S.inv.indexOf('cigarette'),1); S.guySmoked=true; beep(); npc('guy','Спасибо за сигарету! День сегодня не ахти. Денег нет даже на пачку сигарет. Ещё и наушники сломались.'); }
+         return;
+       }
+       if(h=='texts'){ if(!S.guySmoked) say(noHead, 650, 100); else npc('guy','Неплохие стихи, кстати.'); return; }
+       if(h=='mediator'){
+         if(!S.guySmoked) say(noHead, 650, 100);
+         else if(!S.hpFixed){ npc('guy','У тебя что, есть инструмент для ремонта?'); openHP(); }
+         else npc('guy','Спасибо, дальше они уже работают.');
+         return;
+       }
+       say(NOPE); return;
+     }
+   }
+   if(S.scene=='l3'){
+     if(id=='figure'){
+       if(h=='cleanbottle'){ S.inv.splice(S.inv.indexOf('cleanbottle'),1);S.placed=1;beep(); say('Покойся с миром, дед Родион. Надеюсь, там ты рад, что почтили твою память твоим любимым напитком.', S.px - 50, 100); return; }
+       if(h=='dirtbottle'){ say('Дед конечно особой чистоплотностью не обладал. Но ставить в память ему грязную бутылку верх цинизма.', S.px - 50, 100); return; }
+     }
+     if(id=='drips' && h=='hanky'){ say('Кап-кап, до утра подождём.', S.px - 50, 100); return; }
+     if(id=='puddle' && h=='hanky'){ S.inv[S.inv.indexOf('hanky')]='wethanky'; say('Отлично. Платок увлажнён.', S.px - 50, 100); return; }
+   }
+   if(S.scene=='l2'){ if(id=='door' && h=='key'){ say('Ключ подходит. Но зачем мне обратно?', S.px - 50, 100); return; } }
+
+   if(S.scene=='l7'){
+     if(id=='conductor'){
+       if(h=='rub5'){
+         if(S.busPaid){say('Кондуктор: "Проезд уже оплачен."', 800, 80);return}
+         if(S.rub<25){
+           say(S.concertDone?'Кондуктор: "Ты хорошо сыграл. Но проезд всё равно стоит дороже."':'Кондуктор: "Этого мало!"', 800, 80);
+           return;
+         }
+         S.rub-=25;
+         if(S.rub<=0){
+           S.rub=0;
+           const idx=S.inv.indexOf('rub5');
+           if(idx>=0)S.inv.splice(idx,1);
+         }
+         S.busPaid=true;
+         S.needSeat=true;
+         beep();
+         say('Кондуктор: "Ну вот! Заплатил за проезд и живи спокойно!"', 800, 80);
+         S.queue.push({t:'Ох. Присесть бы.',cx:S.px-50,cy:100});
+         return;
+       }
+       if(h=='matches'){say('Кондуктор: "Хулиганство решил задумать?!"', 800, 80);return}
+       if(h=='texts'){say('Кондуктор: "Это не похоже на деньги? Фальшивомонетчик чтоль?"', 800, 80);return}
+       say(NOPE, 800, 80);return;
+     }
+     if(id=='womanRed'){
+       if(h=='rub5'){say('Женщина в красном: "Тебе нужнее!"', 320, 100);return}
+       if(h=='matches'){say('Женщина в красном: "Спасибо, мне не нужно."', 320, 100);return}
+       if(h=='texts'){say('Женщина в красном: *качает головой*', 320, 100);return}
+       say(NOPE, 320, 100);return;
+     }
+     if(id=='oldMan'){
+       if(h=='rub5'){say('Дед: "Тебе нужнее!"', 520, 100);return}
+       if(h=='matches'){say('Дед молча отмахнулся.', 520, 100);return}
+       if(h=='texts'){say('Дед: "Любовь-морковь, ну и рифмы у тебя, тьфу."', 520, 100);return}
+       say(NOPE, 520, 100);return;
+     }
+     if(id=='man'){ if(h=='rub5')say('Самозабвенно переписывается в национальном месенджере.', 50, 100); else say(NOPE, 50, 100); return; }
+     if(id=='sleepingAunt'){ if(h=='rub5')say('Человек мирно дремлет на заднем сиденье. Ни к чему будить...', 830, 100); else say(NOPE, 830, 100); return; }
+   }
+ }
+
+ if(self){ say(h=='hanky'?'Спасибо. Утёр пот. Вроде вечер, а жарковатая осень нынче.':SELF[h]||NOPE, S.px - 50, 100); return; }
+ say(NOPE, S.px - 50, 100);
+}
+
+function zoneClick(z){
+ const id=z.id;
+ if(id=='door'){say('Дверь заперта... мной.', S.px - 50, 100);return}
+ if(id=='tunnel'){ fadeTo(startL3); return; }
+ if(id=='figure'){
+     if(S.placed) say('Покойся с миром, дед Родион.', S.px - 50, 100);
+     else say('Дед Родион вчера схлопотал сердечный. Забавный дед был. Постоянно выпивку клянчил. Почесть бы его память.', S.px - 50, 100);
+     return;
+ }
+
+ if(S.scene=='l7'){
+   if(S.needSeat&&id.startsWith('seat')){
+     S.needSeat=false;
+     say('Ох. Присесть бы.', S.px - 50, 100);
+     fadeTo(()=>{S.scene='l7end';theme2.pause();busSnd.pause();});
+     return;
+   }
+
+   if(id=='conductor'){
+     if(S.busPaid){say('Кондуктор: "Проезд оплачен, езжайте спокойно."', 800, 80);return}
+     S.conductorClicks++;
+     if(S.conductorClicks===1){
+       say('Кондуктор: "Какая договорённость? Какая старушка с остановки? Никто мне ничего не говорил!"', 800, 80);
+     }else{
+       say('Кондуктор: "Молодой человек! Оплачиваем проезд или на следующей остановке вас встретит милиция!"', 800, 80);
+       S.queue.push({t:'Нехорошая ситуация! Надо что-то придумывать и срочно...',cx:S.px-50,cy:100});
+     }
+     return;
+   }
+
+   if(id=='man'){
+     if(S.concertDone&&!S.busGivers.man)giveRub('man','Мужчина: "Даже я отвлёкся от переписки. Держи пятёрку."', 50, 100);
+     else if(S.concertPlaying)say('Мужчина: "Погоди, дай послушать."', 50, 100);
+     else if(S.concertDone)say('Мужчина: "Классная песня. Заслушался, даже переписку бросил."', 50, 100);
+     else say('Самозабвенно переписывается в национальном месенджере.', 50, 100);
+     return;
+   }
+   if(id=='womanRed'){
+     if(S.concertDone&&!S.busGivers.womanRed)giveRub('womanRed','Женщина в красном: "Аж на душе теплее стало. Держи, милок."', 320, 100);
+     else if(S.concertPlaying)say('Женщина в красном: "Тише, слушаю."', 320, 100);
+     else if(S.concertDone)say('Женщина в красном: "Спасибо за музыку, милок. Такой вечер скрасил."', 320, 100);
+     else say('Женщина в красном: "Как ты так умудрился в автобус и без денег сесть?"', 320, 100);
+     return;
+   }
+   if(id=='oldMan'){
+     if(S.concertDone&&!S.busGivers.oldMan)giveRub('oldMan','Дед: "Вот это по-нашему! Держи, молодёжь."', 520, 100);
+     else if(S.concertPlaying)say('Дед: "Не мешай слушать."', 520, 100);
+     else if(S.concertDone)say('Дед: "Хорошо играешь, парень. Не зря учился."', 520, 100);
+     else say('Дед: "До чего молодёжь нынче пошла. Я в вашем возрасте работал не покладая рук и деньги водились."', 520, 100);
+     return;
+   }
+   if(id=='sleepingAunt'){
+     if(S.concertDone&&!S.busGivers.sleepingAunt)giveRub('sleepingAunt','Спящая тётка: "Я не спала. Очень красиво. Вот, возьми."', 830, 100);
+     else if(S.concertPlaying)say('Спящая тётка: "М-м-м... красиво..."', 830, 100);
+     else if(S.concertDone)say('Спящая тётка: "Давно так не слушала. Спасибо тебе, играй ещё."', 830, 100);
+     else say('Человек мирно дремлет на заднем сиденье. Ни к чему будить...', 830, 100);
+     return;
+   }
+   if(id.startsWith('seat')){
+     if(!S.seatMoney){
+       S.seatMoney=true;
+       addRub(1);
+       say('Повезло. Кто-то обронил пятак.', S.px - 50, 100);
+     }else{
+       say('Больше под сиденьем ничего нет.', S.px - 50, 100);
+     }
+     return;
+   }
+   if(z.say){say(z.say, S.px - 50, 100);return}
+   return;
+ }
+
+ if(S.scene=='l4'){
+   if(id=='screwdriver_ground'){ if(S.found.screwdriver_ground){ S.inv.push('screwdriver'); S.found.screwdriver_ground = false; beep(); say('Подобрал отвертку. Пригодится в хозяйстве.', S.px - 50, 100); } return; }
+   if(id=='men') { say('Дарова Зет. Выручай! Светофор не работает. А пиво уже заканчивается!', 300, 150); return; }
+   if(id=='traffic_light') { say('Что ж, советская техника наконец-то сломалась. Надо поискать, где щиток у светофора.', S.px - 50, 100); return; }
+   if(id=='pole_base') { 
+       if(S.screwdriver_broken) {
+           S.puzzleActive = true;
+           beep();
+       } else {
+           say('Здесь пластина прикручена советскими болтами', S.px - 50, 100);
+       }
+       return; 
+   }
+ }
+if(S.scene=='l6'){
+   if(id=='man'){ npc('man','Нет, молодой, у меня только на себя на проезд.'); return; }
+   if(id=='granny'){
+     if(S.hpFixed && !S.busReady){
+       npc('granny','Видела я, как ты помог пареньку: и сигаретой угостил, и наушники починил, просто так. Добрый ты, милок. Сейчас смс знакомой кондукторше напишу, она тебя довезёт.');
+       if(!S.queue.length) S.queue.push({t:'Вовремя я дела закончил. А вот и автобус.',fn:()=>{S.busReady=true;beep()}});
+     }
+     else if(S.busReady) npc('granny','Иди, милок, автобус скоро подъедет. Я знакомой кондукторше уже смс написала.');
+     else npc('granny','Внучок, пенсия то маленькая нынче. А мне за хлебом на дальний район ехать. Никак не могу помочь.');
+     return;
+   }
+   if(id=='guy'){
+     if(!S.guySmoked) say('Он в наушниках. Не слышит. Или делает вид что не слышит.', 650, 100);
+     else if(!S.hpFixed) npc('guy','Кто бы мне наушники починил, было бы так здорово. *затянулся сигаретой*');
+     else npc('guy','Музыка снова со мной. Спасибо тебе!');
+     return;
+   }
+   if(id=='bin_stop'){
+     if(!S.found.brokenmediator){ S.found.brokenmediator=1; S.inv.push('brokenmediator'); beep(); say('Что-то зачастил я с заглядыванием в мусорки. Ну ладно, это в последний раз.', 130, 100); }
+     else say('Больше там ничего интересного. Только мусор.', 130, 100);
+     return;
+   }
+ }
+ if(S.scene=='l5'){
+   if(id=='men') { say('Спасибо Зет! Спас нас от «засухи»!', 300, 150); return; }
+   if(id=='pole_base') { 
+       S.puzzleActive = true;
+       beep();
+       return;
+   }
+   if(id=='traffic_light') {
+       say('Тем и хороши старые технологии - они ремонтопригодные', S.px - 50, 100);
+       return;
+   }
+ }
+ 
+ const F={bin:['dirtbottle','Недопитая вчера бутылка джина. Я уронил её в грязь и выбросил.'],bench:['hanky','Кусок почти чистой ткани. Кто-то здесь вытирал слёзы платком.'],bin3:['basbook','Ужасно. Выбросили книгу. Собрание рассказов «Система Безопасности Раздела» Е.В. Бассуров']}[id];
+ if(F){if(!S.found[F[0]]){S.found[F[0]]=1;S.inv.push(F[0]);beep();say(F[1], S.px - 50, 100)}return}
+ 
+ say(z.say, S.px - 50, 100)
+}
+
+function click(x,y){
+ if(S.scene=='splash'){S.scene='menu';return}
+ if(S.scene=='menu'){if(x>362&&x<790&&y>675&&y<790)fadeTo(startL1);return}
+ if(S.scene=='l7end')return;
+ const panel=y>745;
+ 
+ if(panel){
+     const i=SX.findIndex(s=>Math.abs(x-s)<52);
+     if(i>=0&&Math.abs(y-SY)<52){
+         const item = S.inv[i];
+         if (S.held) {
+             if (item && item !== S.held) {
+                 combine(S.held, item);
+                 S.held = null;
+             } else {
+                 S.held = null;
+             }
+         } else if (item) {
+             S.held = item;
+         }
+     }
+     return;
+ }
+
+ if(S.held&&S.scene!='l1'){const h=S.held;S.held=null;useItem(h,x,y);return}
+ if(S.held){say(NOPE, S.px - 50, 100);S.held=null;return}
+ 
+ if(S.scene=='l1'){
+  if(x>1040&&x<1130&&y>672&&y<728){
+   if(['cigarette','matches','texts','key'].every(k=>S.found[k]))fadeTo(startL2);
+   else say('Не стоит покидать дом с минимальным снаряжением.', 690, 120);
+   return}
+  for(const [id,hx,hy,r,t] of HOTSPOTS)if(Math.hypot(x-hx,y-hy)<r){
+   if(!S.found[id]){S.found[id]=1;S.inv.push(id);beep();say(t, 690, 120)}
+   return}
+  } else if(S.scene=='l6') {
+   if(y>672&&y<728&&x>25&&x<115){ fadeTo(()=>startL5(1080)); return; }
+   if(S.busReady&&y>672&&y<728&&x>1040&&x<1130){ fadeTo(startL7); return; }
+   const z=hit(H6,x,y); if(z){zoneClick(z);return}
+   S.tx=Math.max(70,Math.min(1080,x));
+ } else if(S.scene=='l7'){
+   if (Math.abs(x - S.px) < 120 && y > 250 && y < 760) {
+       S.tx=Math.max(70,Math.min(1080,x));
+       return;
+   }
+   const z=hit(H7,x,y);
+   if(z){zoneClick(z);return}
+   S.tx=Math.max(70,Math.min(1080,x));
+ } else if(S.scene=='l4' || S.scene=='l5') {
+   if(x>25&&x<115&&y>672&&y<728){
+       if(S.scene=='l4') { fadeTo(()=>{startL3(1080)}); }
+       return;
+   }
+   if(x>1040&&x<1130&&y>672&&y<728){
+     if(S.scene=='l5') { fadeTo(startL6); }
+     else say('Куда я пойду? Мне еще нужно разобраться со светофором.', S.px - 50, 100); 
+     return;
+   }
+   const z = S.scene=='l4' ? hit4(x,y) : hit5(x,y);
+   if(z){zoneClick(z);return}
+   if(S.scene=='l4') S.tx=Math.max(70,Math.min(1080,x));
+ } else {
+  if(S.scene=='l3'&&y>672&&y<728){
+   if(x>25&&x<115){fadeTo(()=>startL2(930));return}
+   if(x>1040&&x<1130){
+       if(S.placed) {
+           initPuzzle(); 
+           fadeTo(startL4); 
+       }
+       else { say('У меня есть стойкое ощущение что я что-то не сделал.', S.px - 50, 100); S.tx = 450; }
+       return;
+   }}
+  const z=hit(S.scene=='l2'?H2:H3,x,y);if(z){zoneClick(z);return}
+  const maxX = (S.scene=='l3' && !S.placed) ? 450 : 1080;
+  S.tx=Math.max(70,Math.min(maxX,x));
+ }
+}
+
+const P_SIZE = 75;
+const P_OX = 40; 
+const P_OY = 20;
+
+function getConns(t, r) {
+    if (t===1) return [r%2===0?['L','R']:['U','D']][0];
+    if (t===2) return [['U','R'],['R','D'],['D','L'],['L','U']][r%4];
+    if (t===3) return [['L','R','U'],['U','D','R'],['L','R','D'],['U','D','L']][r%4];
+    if (t===4) return ['L','R','U','D'];
+    if (t===5) return ['R'];
+    if (t===6) return ['R'];
+    if (t===8) return S.key_in_puzzle ? ['U','L','R'] : []; 
+    return [];
+}
+
+function checkPuzzle() {
+    const visited = new Set();
+    const q = [[0, 0]]; 
+    visited.add('0,0');
+    let isSolved = false;
+    let current = 0;
+    const dirs = { 'U': [0, -1, 'D'], 'D': [0, 1, 'U'], 'L': [-1, 0, 'R'], 'R': [1, 0, 'L'] };
+
+    while(current < q.length) {
+        const [cx, cy] = q[current++];
+        if (cx === 0 && cy === 8) isSolved = true; 
+        const cell = puzzleGrid[cy][cx];
+        if(!cell) continue; 
+        const conns = getConns(cell.t, cell.r);
+        for (let c of conns) {
+            const nx = cx + dirs[c][0], ny = cy + dirs[c][1];
+            if (nx >= 0 && nx < 9 && ny >= 0 && ny < 9 && !visited.has(`${nx},${ny}`)) {
+                const nCell = puzzleGrid[ny][nx];
+                if(!nCell) continue;
+                const nConns = getConns(nCell.t, nCell.r);
+                if (nConns.includes(dirs[c][2])) {
+                    visited.add(`${nx},${ny}`);
+                    q.push([nx, ny]);
+                }
+            }
+        }
+    }
+    return { solved: isSolved, powered: visited };
+}
+
+function clickPuzzle(x, y) {
+    if (x > 40 && x < 140 && y > 715 && y < 745) {
+        S.puzzleActive = false;
+        if (S.scene === 'l4' && S.puzzleSolved) {
+            startL5(S.px); 
+        } else if (S.scene === 'l5' && !S.puzzleSolved) {
+            startL4(S.px); 
+        }
+        return;
+    }
+
+    const cx = Math.floor((x - P_OX) / P_SIZE);
+    const cy = Math.floor((y - P_OY) / P_SIZE);
+    if (cx < 0 || cx >= 9 || cy < 0 || cy >= 9) return;
+    const cell = puzzleGrid[cy][cx];
+
+    if (cell.t === 8) {
+        if (S.key_in_puzzle) {
+            S.key_in_puzzle = false;
+            S.inv.push('key');
+            beep();
+            say('Забрал ключ. Цепь разомкнута.', x - 150, y - 150);
+            const res = checkPuzzle();
+            if (S.puzzleSolved && !res.solved) S.puzzleSolved = false;
+        } else if (S.held === 'key') {
+            S.inv.splice(S.inv.indexOf('key'), 1);
+            S.held = null;
+            S.key_in_puzzle = true;
+            beep();
+            say('Вот теперь контакт есть. На обратном пути заберу.', x - 150, y - 150);
+            const res = checkPuzzle();
+            if (res.solved && !S.puzzleSolved) {
+                S.puzzleSolved = true;
+                say('Цепь замкнута! Светофор снова работает. Нажмите ВЫХОД.', x - 150, y - 150);
+            }
+        } else {
+            say('Здесь выгорели провода. Нужна перемычка.', x - 150, y - 150);
+        }
+        return;
+    }
+
+    if ([1,2,3,4].includes(cell.t)) {
+        cell.r = (cell.r + 1) % 4;
+        beep();
+        const res = checkPuzzle();
+        if (res.solved && !S.puzzleSolved) {
+            S.puzzleSolved = true;
+            say('Цепь замкнута! Светофор снова работает. Нажмите ВЫХОД.', x - 150, y - 150);
+        } else if (!res.solved && S.puzzleSolved) {
+            S.puzzleSolved = false;
+            say('Светофор погас. Похоже, я что-то не так подключил.', x - 150, y - 150);
+        }
+    }
+}
+
+function drawPuzzle() {
+    g.save();
+    g.beginPath();
+    g.rect(0, 0, W, 745);
+    g.clip();
+    g.fillStyle = '#000';
+    g.fillRect(0, 0, W, 745);
+    if (IMG.puzzle_bg && IMG.puzzle_bg.width > 0) g.drawImage(IMG.puzzle_bg, 0, 0, W, 745);
+    const result = checkPuzzle();
+
+    for (let y = 0; y < 9; y++) {
+        for (let x = 0; x < 9; x++) {
+            const cell = puzzleGrid[y][x];
+            if(!cell) continue;
+            const px = P_OX + x * P_SIZE + P_SIZE/2;
+            const py = P_OY + y * P_SIZE + P_SIZE/2;
+            g.save(); g.translate(px, py); g.rotate(cell.r * Math.PI / 2);
+            g.lineWidth = 8; g.lineCap = 'round';
+            const isPowered = result.powered.has(`${x},${y}`);
+            g.strokeStyle = isPowered ? '#ffaa00' : '#4fa8e8';
+            if (isPowered) { g.shadowColor = '#ffaa00'; g.shadowBlur = 10; }
+            else { g.shadowColor = '#4fa8e8'; g.shadowBlur = 5; }
+            g.beginPath();
+            if (cell.t === 1) { g.moveTo(-P_SIZE/2, 0); g.lineTo(P_SIZE/2, 0); }
+            else if (cell.t === 2) { g.moveTo(0, -P_SIZE/2); g.lineTo(0, 0); g.lineTo(P_SIZE/2, 0); }
+            else if (cell.t === 3) { g.moveTo(-P_SIZE/2, 0); g.lineTo(P_SIZE/2, 0); g.moveTo(0, 0); g.lineTo(0, -P_SIZE/2); }
+            else if (cell.t === 4) { g.moveTo(-P_SIZE/2, 0); g.lineTo(P_SIZE/2, 0); g.moveTo(0, -P_SIZE/2); g.lineTo(0, P_SIZE/2); }
+            else if (cell.t === 5) { g.moveTo(0, 0); g.lineTo(P_SIZE/2, 0); g.fillStyle = '#ffaa00'; g.arc(0, 0, 15, 0, Math.PI*2); g.fill(); }
+            else if (cell.t === 6) { g.moveTo(0, 0); g.lineTo(P_SIZE/2, 0); g.fillStyle = '#00ff00'; g.arc(0, 0, 15, 0, Math.PI*2); g.fill(); }
+            else if (cell.t === 8) { 
+                g.strokeStyle = (S.key_in_puzzle && isPowered) ? '#ffaa00' : '#555'; 
+                g.shadowBlur = (S.key_in_puzzle && isPowered) ? 10 : 0;
+                g.moveTo(-P_SIZE/2, 0); g.lineTo(P_SIZE/2, 0); 
+                g.moveTo(0, 0); g.lineTo(0, -P_SIZE/2); 
+            }
+            g.stroke();
+            g.restore();
+        }
+    }
+
+    if (S.key_in_puzzle) {
+        const kx = P_OX + 2 * P_SIZE; 
+        const ky = P_OY + 8 * P_SIZE + P_SIZE/2;
+        g.save(); g.translate(kx, ky); g.rotate(Math.PI/4); icon('key', 0, 0, 160); g.restore();
+    }
+
+    g.fillStyle = '#331f1f'; g.fillRect(40, 715, 100, 30); g.strokeStyle = '#e6cd96'; g.lineWidth = 2; g.strokeRect(40, 715, 100, 30);
+    g.fillStyle = '#e6cd96'; g.font = '24px "Amatic SC"'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('ВЫХОД', 90, 730);
+    g.textAlign = 'left'; g.textBaseline = 'top';
+    g.restore();
+}
+
+const HP_EDGES=[[0,1],[1,2],[3,4],[4,5],[6,7],[7,8],[0,3],[3,6],[1,4],[4,7],[2,5],[5,8],[0,4],[4,8],[1,5],[9,0],[9,1],[9,4]];
+const HP_COL=['#d9534f','#4fa8e8','#5cb85c','#e6c84f','#c77dff','#ff9e5e'];
+function segX(a,b,c,d){const o=(p,q,r)=>Math.sign((q.x-p.x)*(r.y-p.y)-(q.y-p.y)*(r.x-p.x));return o(a,b,c)*o(a,b,d)<0&&o(c,d,a)*o(c,d,b)<0}
+function hpCross(){
+ const n=S.hp.nodes,E=S.hp.edges,bad=new Set();let c=0;
+ for(let i=0;i<E.length;i++)for(let j=i+1;j<E.length;j++){
+  const [a,b]=E[i],[cc,d]=E[j];if(a==cc||a==d||b==cc||b==d)continue;
+  if(segX(n[a],n[b],n[cc],n[d])){c++;bad.add(i);bad.add(j)}}
+ return {c,bad}}
+function initHP(){
+ let seed=11;const rnd=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
+ let nodes;
+ for(let k=0;k<400;k++){
+  nodes=[];
+  for(let i=0;i<10;i++)nodes.push({x:260+rnd()*640,y:140+rnd()*500,pin:null});
+  nodes[0]={x:150,y:390,pin:'ВХОД'};nodes[8]={x:1000,y:390,pin:'ДИНАМИК'};
+  let ok=true;
+  for(let i=0;i<10&&ok;i++)for(let j=i+1;j<10;j++)if(Math.hypot(nodes[i].x-nodes[j].x,nodes[i].y-nodes[j].y)<85){ok=false;break}
+  if(!ok)continue;
+  S.hp={nodes,edges:HP_EDGES.map((e,i)=>[e[0],e[1],HP_COL[i%6]]),solved:false};
+  if(hpCross().c>=9)return;
+ }
+ S.hp={nodes,edges:HP_EDGES.map((e,i)=>[e[0],e[1],HP_COL[i%6]]),solved:false};
+}
+function openHP(){if(!S.hp)initHP();S.puzzleActive=true;S.puzzleKind='hp';S.hpDrag=null}
+function hpDown(x,y){
+ if(x>40&&x<140&&y>715&&y<745){
+  S.puzzleActive=false;S.puzzleKind=null;S.hpDrag=null;
+  if(S.hp.solved&&!S.hpFixed){S.hpFixed=true;beep();npc('guy','Работает! Музыка снова со мной. Спасибо тебе!')}
+  return}
+ let best=-1,bd=34;
+ S.hp.nodes.forEach((n,i)=>{if(n.pin)return;const d=Math.hypot(n.x-x,n.y-y);if(d<bd){bd=d;best=i}});
+ if(best>=0)S.hpDrag=best;
+}
+function hpMove(){
+ if(S.hpDrag==null||!S.puzzleActive||S.puzzleKind!=='hp')return;
+ const n=S.hp.nodes[S.hpDrag];n.x=Math.max(60,Math.min(1090,S.mx));n.y=Math.max(110,Math.min(690,S.my));
+}
+function hpUp(){
+ if(S.hpDrag==null)return;S.hpDrag=null;
+ const r=hpCross();
+ if(r.c===0&&!S.hp.solved){S.hp.solved=true;beep();say('Провода больше не пересекаются. Цепь замкнута. Можно закрывать корпус.', W/2 - 150, 100)}
+ else if(r.c>0&&S.hp.solved){S.hp.solved=false;say('Опять где-то замкнуло.', W/2 - 150, 100)}
+}
+function drawHP(){
+ const r=hpCross(),n=S.hp.nodes,E=S.hp.edges;
+ g.save();g.beginPath();g.rect(0,0,W,745);g.clip();
+ g.fillStyle='#10201a';g.fillRect(0,0,W,745);
+ g.strokeStyle='#1d3a2c';g.lineWidth=1;
+ for(let x=0;x<W;x+=40){g.beginPath();g.moveTo(x,0);g.lineTo(x,745);g.stroke()}
+ for(let y=0;y<745;y+=40){g.beginPath();g.moveTo(0,y);g.lineTo(W,y);g.stroke()}
+ g.strokeStyle='#e6cd96';g.lineWidth=4;g.strokeRect(20,20,W-40,705);
+ g.font='42px "Amatic SC"';g.fillStyle='#e6cd96';g.textAlign='center';g.textBaseline='middle';
+ g.fillText('Наушники: разведи провода так, чтобы они нигде не пересекались',W/2,62);
+ g.lineCap='round';
+ E.forEach((e,i)=>{
+  const a=n[e[0]],b=n[e[1]];
+  g.lineWidth=7;
+  if(S.hp.solved){g.strokeStyle='#ffaa00';g.shadowColor='#ffaa00';g.shadowBlur=10}
+  else{g.strokeStyle=r.bad.has(i)?'#ff3b3b':e[2];g.shadowColor=g.strokeStyle;g.shadowBlur=r.bad.has(i)?8:3}
+  g.beginPath();g.moveTo(a.x,a.y);g.lineTo(b.x,b.y);g.stroke();
+ });
+ g.shadowBlur=0;
+ n.forEach((p,i)=>{
+  if(p.pin){
+   g.fillStyle='#331f1f';g.strokeStyle='#e6cd96';g.lineWidth=3;
+   g.beginPath();g.rect(p.x-58,p.y-28,116,56);g.fill();g.stroke();
+   g.fillStyle=S.hp.solved?'#ffaa00':'#e6cd96';g.font='30px "Amatic SC"';g.fillText(p.pin,p.x,p.y);
+  }else{
+   g.fillStyle=(S.hpDrag===i)?'#fff2b0':'#c9a14a';g.strokeStyle='#2a2010';g.lineWidth=3;
+   g.beginPath();g.arc(p.x,p.y,17,0,Math.PI*2);g.fill();g.stroke();
+   g.fillStyle='#2a2010';g.beginPath();g.arc(p.x,p.y,5,0,Math.PI*2);g.fill();
+  }
+ });
+ g.font='34px "Amatic SC"';g.fillStyle=S.hp.solved?'#ffaa00':'#e6cd96';
+ g.fillText(S.hp.solved?'Сигнал есть! Нажмите ВЫХОД':'Пересечений: '+r.c,W/2,700);
+ g.fillStyle='#331f1f';g.fillRect(40,715,100,30);g.strokeStyle='#e6cd96';g.lineWidth=2;g.strokeRect(40,715,100,30);
+ g.fillStyle='#e6cd96';g.font='24px "Amatic SC"';g.fillText('ВЫХОД',90,730);
+ g.textAlign='left';g.textBaseline='top';
+ g.restore();
+}
+
+const CHORD_BTNS=[{n:'Am',x:220},{n:'F',x:390},{n:'C',x:560},{n:'E',x:730}];
+
+function updateChord(dt){
+ const c=S.chord;
+ if(!c||c.solved)return;
+ c.time+=dt;
+ const interval=Math.max(.55,1.15-c.score*.035);
+ const speed=220+c.score*14;
+ if(c.time-c.lastSpawn>interval){
+   c.lastSpawn=c.time;
+   c.notes.push({type:c.seq[Math.floor(Math.random()*4)],x:W+60,hit:false});
+ }
+ for(const n of c.notes)n.x-=speed*dt;
+ c.notes=c.notes.filter(n=>n.x>-100);
+}
+
+function clickChord(x,y){
+ const c=S.chord;
+ if(!c)return;
+ if(x>40&&x<140&&y>715&&y<745){
+   if(c.solved)startLetov();
+   else{
+     S.puzzleActive=false;
+     S.puzzleKind=null;
+     S.chord=null;
+     theme2.volume=.7;
+     tsoy.pause();
+     say('Так, надо ещё подготовиться...', S.px - 50, 100);
+   }
+   return;
+ }
+ if(c.solved)return;
+ for(const b of CHORD_BTNS){
+   if(x>b.x-65&&x<b.x+65&&y>620&&y<700){
+     const zone=360;
+     const near=c.notes.find(n=>!n.hit&&Math.abs(n.x-zone)<65);
+     if(near&&near.type===b.n&&b.n===c.seq[c.target]){
+       near.hit=true;
+       c.notes=c.notes.filter(n=>n!==near);
+       c.score++;
+       c.target=(c.target+1)%4;
+       c.feedback='+1';
+       playChordSound(b.n);
+       if(c.score>=16){
+         c.solved=true;
+         S.chordSolved=true;
+         say('Вспомнил!', W/2 - 150, 100);
+       }
+     }else{
+       c.score=0;
+       c.target=0;
+       c.notes=[];
+       c.lastSpawn=c.time;
+       c.feedback='Ошибка!';
+       playErrorSound();
+     }
+     return;
+   }
+ }
+}
+
+function drawChordPuzzle(){
+ const c=S.chord;
+ if(!c)return;
+ g.save();
+ g.beginPath();
+ g.rect(0,0,W,745);
+ g.clip();
+
+ g.fillStyle='rgba(0,0,0,.82)';
+ g.fillRect(0,0,W,745);
+ g.strokeStyle='#e6cd96';
+ g.lineWidth=3;
+ g.strokeRect(20,20,W-40,705);
+
+ g.fillStyle='#e6cd96';
+ g.font='42px "Amatic SC"';
+ g.textAlign='center';
+ g.textBaseline='middle';
+ g.fillText('Подбери народную мелодию: Am → F → C → E',W/2,60);
+ g.font='32px "Amatic SC"';
+ g.fillText('Очки: '+c.score+' / 16',W/2,110);
+
+ const seqY=160;
+ c.seq.forEach((s,i)=>{
+   const sx=W/2-180+i*120;
+   g.fillStyle=(i===c.target)?'#ffaa00':'#331f1f';
+   g.strokeStyle='#e6cd96';
+   g.lineWidth=2;
+   g.beginPath();
+   g.rect(sx-45,seqY-25,90,50);
+   g.fill();
+   g.stroke();
+   g.fillStyle=(i===c.target)?'#2a2010':'#e6cd96';
+   g.font='32px "Amatic SC"';
+   g.fillText(s,sx,seqY);
+ });
+
+ g.strokeStyle='#e6cd96';
+ g.lineWidth=2;
+ g.beginPath();
+ g.moveTo(80,520);
+ g.lineTo(W-80,520);
+ g.stroke();
+
+ g.strokeStyle='#ffaa00';
+ g.lineWidth=4;
+ g.strokeRect(310,460,100,90);
+ g.fillStyle='rgba(255,170,0,.12)';
+ g.fillRect(310,460,100,90);
+
+ c.notes.forEach(n=>{
+   if(n.hit)return;
+   g.fillStyle='#331f1f';
+   g.strokeStyle='#e6cd96';
+   g.lineWidth=3;
+   g.beginPath();
+   g.rect(n.x-45,480,90,70);
+   g.fill();
+   g.stroke();
+   g.fillStyle='#e6cd96';
+   g.font='40px "Amatic SC"';
+   g.fillText(n.type,n.x,515);
+ });
+
+ CHORD_BTNS.forEach(b=>{
+   g.fillStyle='#331f1f';
+   g.strokeStyle='#e6cd96';
+   g.lineWidth=3;
+   g.beginPath();
+   g.rect(b.x-65,620,130,80);
+   g.fill();
+   g.stroke();
+   g.fillStyle='#e6cd96';
+   g.font='34px "Amatic SC"';
+   g.fillText(b.n,b.x,660);
+ });
+
+ if(c.feedback){
+   g.fillStyle='#ffaa00';
+   g.font='30px "Amatic SC"';
+   g.fillText(c.feedback,W/2,590);
+ }
+
+ g.fillStyle='#331f1f';
+ g.fillRect(40,715,100,30);
+ g.strokeStyle='#e6cd96';
+ g.lineWidth=2;
+ g.strokeRect(40,715,100,30);
+ g.fillStyle='#e6cd96';
+ g.font='24px "Amatic SC"';
+ g.fillText('ВЫХОД',90,730);
+
+ g.textAlign='left';
+ g.textBaseline='top';
+ g.restore();
+}
+
+function wrap(t,mw){
+const w=t.split(' ');const L=[];let c='';for(const x of w){const n=c?c+' '+x:x;if(g.measureText(n).width>mw&&c){L.push(c);c=x}else c=n}L.push(c);return L}
+function arrow(cx,cy,d,t){g.save();g.globalAlpha=.75+.25*Math.sin(t/300);g.fillStyle='#e6cd96';g.strokeStyle='#2a2010';g.lineWidth=3;g.beginPath();[[-45,-12],[5,-12],[5,-28],[45,0],[5,28],[5,12],[-45,12]].forEach(([a,b],i)=>i?g.lineTo(cx+a*d,cy+b):g.moveTo(cx+a*d,cy+b));g.closePath();g.fill();g.stroke();g.restore()}
+function drawPick(id,x,y,h){
+ g.save();g.translate(x,y);const r=h*.3;g.fillStyle='#d8c9a0';g.strokeStyle='#2a2010';g.lineWidth=3;g.beginPath();
+ if(id=='mediator'){g.moveTo(-r,-r*.8);g.quadraticCurveTo(0,-r*1.1,r,-r*.8);g.quadraticCurveTo(r*.9,r*.5,0,r*1.1);g.quadraticCurveTo(-r*.9,r*.5,-r,-r*.8)}
+ else{g.moveTo(-r,-r*.8);g.quadraticCurveTo(0,-r*1.1,r*.9,-r*.6);g.lineTo(r*.2,0);g.quadraticCurveTo(r*1.1,r*.5,r*.2,r*1.1);g.quadraticCurveTo(-r*.9,r*.5,-r*.5,-r*.2);g.closePath()}
+ g.fill();g.stroke();g.restore()}
+function icon(id,x,y,h){
+ if((id=='mediator'||id=='brokenmediator')&&!(IMG[id]&&IMG[id].width)){drawPick(id,x,y,h);return}
+ if(id=='wethanky'){icon('hanky',x,y,h);const r=h*.13,cx=x+h*.26,cy=y+h*.2;g.save();g.fillStyle='#4fa8e8';g.strokeStyle='#0d2a44';g.lineWidth=2;g.beginPath();g.moveTo(cx,cy-r*2);g.quadraticCurveTo(cx+r*1.5,cy-r*.2,cx+r,cy+r*.4);g.arc(cx,cy+r*.4,r,0,Math.PI);g.quadraticCurveTo(cx-r*1.5,cy-r*.2,cx,cy-r*2);g.fill();g.stroke();g.restore();return}
+ if(id==='rub5'&&(!IMG.rub5||!IMG.rub5.width)){
+   g.save();
+   g.fillStyle='#6b8f4e';
+   g.strokeStyle='#2a2010';
+   g.lineWidth=3;
+   g.beginPath();
+   g.rect(x-h*.35,y-h*.2,h*.7,h*.4);
+   g.fill();
+   g.stroke();
+   g.fillStyle='#f1e2bd';
+   g.font='28px "Amatic SC"';
+   g.textAlign='center';
+   g.textBaseline='middle';
+   g.fillText('5',x,y);
+   g.restore();
+   return;
+ }
+const i=IMG[id];if(!i||!i.width)return;const w=h*i.width/i.height;g.drawImage(i,x-w/2,y-h/2,w,h)}
+function update(dt){
+ if(mv!==mt){mv+=Math.sign(mt-mv)*Math.min(Math.abs(mt-mv),.4*dt);music.volume=mv}
+ if(S.fade){const f=S.fade;f.a+=f.ph*dt/.6;if(f.ph==1&&f.a>=1){f.a=1;f.ph=-1;f.cb()}else if(f.ph==-1&&f.a<=0)S.fade=null}
+ 
+ if(S.tsoyPlaying || S.concertPlaying){
+     S.tx = S.px;
+     S.walk = 0;
+     if(!step.paused){step.pause();step.currentTime=0}
+ } else {
+     const d=S.tx-S.px;
+     if(S.scene!='l1'&&Math.abs(d)>3){S.dir=d>0?1:-1;S.px+=S.dir*Math.min(Math.abs(d),170*dt);S.walk+=dt;if(step.paused)step.play().catch(()=>{})}
+     else{S.walk=0;if(!step.paused){step.pause();step.currentTime=0}}
+ }
+ 
+ if(S.puzzleActive&&S.puzzleKind==='chord')updateChord(dt);
+}
+
+function draw(t){
+ g.clearRect(0,0,W,H);
+ if(S.scene=='splash'){g.fillStyle='#000';g.fillRect(0,0,W,H);g.font='60px "Amatic SC"';g.fillStyle='rgba(238,220,180,'+(.55+.45*Math.sin(t/400))+')';g.textAlign='center';g.textBaseline='middle';g.fillText('Нажмите, чтобы начать',W/2,H/2);g.textAlign='left'}
+ else if(S.scene=='menu'){drawImageSafe(IMG.logo,0,0,W,H)}
+ else{
+  if(S.scene=='l7end'){
+    g.fillStyle='#000';
+    g.fillRect(0,0,W,H);
+    g.font='60px "Amatic SC"';
+    g.fillStyle='#e6cd96';
+    g.textAlign='center';
+    g.textBaseline='middle';
+    g.fillText('Конец уровня',W/2,H/2);
+    g.textAlign='left';
+    g.textBaseline='top';
+  } else {
+   const bg = {l1:IMG.back0,l2:IMG.back1,l3:IMG.back2,l4:IMG.back3,l5:IMG.back3n,l6:IMG.back4,l7:IMG.back5}[S.scene];
+   if(bg && bg.width > 0) g.drawImage(bg,0,0,W,H);
+   else { g.fillStyle = '#1a1a1a'; g.fillRect(0,0,W,H); }
+   
+   if(S.scene=='l1'){
+    const f=IMG.front;drawImageSafe(f,355,52,f.width*.46,f.height*.46);
+    if(!S.found.key){g.save();g.translate(800,700);g.rotate(-.35);icon('key',0,0,70);g.restore()}
+    g.font='38px "Amatic SC"';g.fillStyle='rgba(238,220,180,.8)';g.textBaseline='top';
+    wrap(HINT,320).forEach((l,i)=>g.fillText(l,60,70+i*34));
+    const p=.75+.25*Math.sin(t/300),cx=1085,cy=700;g.save();g.globalAlpha=p;g.fillStyle='#e6cd96';g.strokeStyle='#2a2010';g.lineWidth=3;
+    g.beginPath();[[-45,-12],[5,-12],[5,-28],[45,0],[5,28],[5,12],[-45,12]].forEach(([a,b],i)=>i?g.lineTo(cx+a,cy+b):g.moveTo(cx+a,cy+b));g.closePath();g.fill();g.stroke();g.restore();
+   } else if(S.scene=='l4') {
+     if(S.found.screwdriver_ground) icon('screwdriver', 365, 695, 40);
+     arrow(70,700,-1,t); 
+     const n=Math.floor(S.walk/.33)%2+1, im=IMG[(S.dir>0?'right':'left')+n];
+     if(im && im.width > 0) {
+        const ks=1.0;
+        const charY = 750; 
+        g.drawImage(im,S.px-111*ks,charY-318*ks,222*ks,318*ks);
+     }
+   } else if (S.scene=='l6') {
+     arrow(70,700,-1,t); if(S.busReady) arrow(1085,700,1,t);
+     const n=Math.floor(S.walk/.33)%2+1, im=IMG[(S.dir>0?'right':'left')+n];
+     if(im && im.width > 0) g.drawImage(im,S.px-111,750-318,222,318);
+   } else if (S.scene=='l7') {
+     const n=Math.floor(S.walk/.33)%2+1, im=IMG[(S.dir>0?'right':'left')+n];
+     if(im && im.width > 0) {
+        const scale=1.6;
+        const w=222*scale, h=318*scale;
+        g.drawImage(im, S.px-w/2, 760-h, w, h);
+     }
+   } else if (S.scene=='l5') {
+     arrow(1085,700,1,t); 
+   } else {
+    const n=Math.floor(S.walk/.33)%2+1, im=IMG[(S.dir>0?'right':'left')+n];
+    if(S.placed&&S.scene=='l3')icon('cleanbottle',480,652,70);
+    if(im && im.width > 0) {
+        const ks=S.scene=='l3'?1.5:1;
+        g.drawImage(im,S.px-111*ks,700-318*ks,222*ks,318*ks);
+    }
+    if(S.scene=='l3'){arrow(70,700,-1,t);arrow(1085,700,1,t)}
+   }
+  }
+
+  if(S.puzzleActive){
+    if(S.puzzleKind==='hp')drawHP();
+    else if(S.puzzleKind==='chord')drawChordPuzzle();
+    else drawPuzzle();
+  }
+
+  if(S.scene!=='l7end'){
+    S.inv.forEach((id,i)=>{
+      if(id!==S.held)icon(id,SX[i],SY,84);
+      if(id==='rub5'){
+        g.save();
+        g.font='28px "Amatic SC"';
+        g.fillStyle='#ffe28a';
+        g.strokeStyle='#2a2010';
+        g.lineWidth=4;
+        g.textAlign='center';
+        g.textBaseline='middle';
+        g.strokeText('x'+Math.floor(S.rub/5),SX[i]+34,SY+30);
+        g.fillText('x'+Math.floor(S.rub/5),SX[i]+34,SY+30);
+        g.restore();
+      }
+    });
+  }
+ }
+
+ if(S.bubble && S.scene!=='l7end'){
+  let bx = S.bubbleCX !== undefined ? S.bubbleCX : (S.scene=='l1'?690:S.px - 50);
+  let by = S.bubbleCY !== undefined ? S.bubbleCY : (S.scene=='l1'?120:100);
+
+  bx = Math.max(20, Math.min(W - 320, bx));
+  by = Math.max(20, Math.min(H - 300, by));
+
+  drawImageSafe(IMG.voice,bx,by,300,238);
+  g.font='32px "Amatic SC"';g.fillStyle='#f1e2bd';g.textAlign='center';g.textBaseline='middle';
+  let L=wrap(S.bubble,210),lh=28;if(L.length>5){g.font='26px "Amatic SC"';L=wrap(S.bubble,230);lh=24}
+  L.forEach((l,i)=>g.fillText(l,bx+150,by+100+(i-(L.length-1)/2)*lh));g.textAlign='left';
+ }
+ 
+ if(S.held && S.scene!=='l7end')icon(S.held,S.mx+30,S.my+30,72);
+
+ if(S.tsoyPlaying || S.concertPlaying){
+    g.font='48px "Amatic SC"';
+    g.fillStyle='#e6cd96';
+    g.textAlign='center';
+    g.textBaseline='middle';
+    g.fillText('Зет играет...', W/2, H - 120);
+    g.textAlign='left';
+    g.textBaseline='top';
+ } else {
+    g.save();g.translate(S.mx,S.my);if(S.down)g.rotate(-.35);drawImageSafe(IMG.cursor,-6,-6,50,50);g.restore();
+ }
+
+ if(S.fade){g.fillStyle='rgba(0,0,0,'+S.fade.a+')';g.fillRect(0,0,W,H)}
+}
+function loop(t){const dt=Math.min(.05,(t-S.last)/1000||0);S.last=t;update(dt);draw(t);requestAnimationFrame(loop)}
+init();
+</script></body></html>
