@@ -7,10 +7,15 @@ const SRC={logo:'logos/logo',cursor:'icons/cursor',guitar:'icons/guitar',key:'ic
 const IMG={};
 const A=(u,v,l)=>{const a=new Audio(u);a.volume=v;a.loop=l;return a};
 const music=A('music/main_theme.mp3',.7,true),tick=A('sounds/clock-tick.mp3',.6,true),eve=A('sounds/backyard-evening.mp3',.7,true),step=A('sounds/step.mp3',.6,true),drip=A('sounds/kapli.mp3',1,true),streetMusic=A('sounds/street.mp3',.7,true),theme2=A('music/theme2.mp3',.7,true),busSnd=A('sounds/autobus.mp3',.7,true);
-const tsoy=A('music/tsoy.mp3',1.0,false),letov=A('music/letov.mp3',1.0,false),applause=A('sounds/applause.mp3',.8,false);
+const tsoy=A('music/tsoy.mp3',1.0,false),letov=A('music/letov.mp3',1.0,false),applause=A('sounds/applause.mp3',.8,false),dogBark=A('sounds/dogbark.mp3',.9,false);
 const load=u=>new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>{console.warn('Нет файла',u);r(i)};i.src=u});
 let mv=.7,mt=.7;
-function ensureMusic(){const t=(S.scene=='l6'||S.scene=='l7')?theme2:music;if(t.paused)t.play().catch(()=>{})}
+function ensureMusic(){
+ if(S.dbg)return;
+ if(S.scene=='back6left'){if(eve.paused)eve.play().catch(()=>{});return;}
+ if(S.scene=='back6mid'||S.scene=='back6right'){if(streetMusic.paused)streetMusic.play().catch(()=>{});return;}
+ const t=(S.scene=='l6'||S.scene=='l7')?theme2:music;if(t.paused)t.play().catch(()=>{})
+}
 ['pointerdown','keydown','touchstart'].forEach(e=>addEventListener(e,ensureMusic));
 const SX=[90,195,300,405,510,650,757,865,972],SY=810;
 
@@ -20,40 +25,40 @@ const S={
     queue:[],hpDrag:null,hpFixed:false,busReady:false,guySmoked:false,l6seen:false,puzzleKind:null,hp:null,
     puzzleActive:false, puzzleSolved:false, screwdriver_broken:false, key_in_puzzle:false,
     busPaid:false,needSeat:false,rub:0,seatMoney:false,busGivers:{},conductorClicks:0,l7Started:false,
-    tsoyStarted:false,tsoyComplete:false,tsoyPlaying:false,chordSolved:false,concertPlaying:false,concertDone:false,chord:null
+    tsoyStarted:false,tsoyComplete:false,tsoyPlaying:false,chordSolved:false,concertPlaying:false,concertDone:false,chord:null,
+    dbuf:'',dbg:false,b6Seen:false
 };
+
+const DOG={x:700,y:560,w:180,h:140};
 
 const puzzleGrid = Array.from({length: 9}, () => Array.from({length: 9}, () => ({t:0, r:0})));
 
 function initPuzzle() {
-    const types = [1, 1, 1, 2, 2, 3, 4]; 
+    const types = [1, 1, 1, 2, 2, 3, 4];
     for(let y=0; y<9; y++) for(let x=0; x<9; x++) {
         puzzleGrid[y][x] = {t: types[Math.floor(Math.random()*types.length)], r: Math.floor(Math.random()*4)};
     }
-    
-    puzzleGrid[0][0] = {t:5, r:0}; 
-    puzzleGrid[0][1] = {t:3, r:0}; 
-    puzzleGrid[0][2] = {t:2, r:1}; 
-    puzzleGrid[1][2] = {t:1, r:1}; 
-    puzzleGrid[2][2] = {t:3, r:1}; 
-    puzzleGrid[2][3] = {t:1, r:0}; 
-    puzzleGrid[2][4] = {t:2, r:1}; 
-    puzzleGrid[3][4] = {t:1, r:1}; 
-    puzzleGrid[4][4] = {t:3, r:1}; 
-    puzzleGrid[4][5] = {t:1, r:0}; 
-    puzzleGrid[4][6] = {t:2, r:1}; 
-    puzzleGrid[5][6] = {t:1, r:1}; 
-    puzzleGrid[6][6] = {t:3, r:2}; 
-    puzzleGrid[6][5] = {t:1, r:0}; 
-    puzzleGrid[6][4] = {t:2, r:1}; 
-    puzzleGrid[7][4] = {t:1, r:1}; 
-    puzzleGrid[8][4] = {t:3, r:2}; 
-    puzzleGrid[8][3] = {t:1, r:0}; 
-    
-    puzzleGrid[8][2] = {t:8, r:0}; 
-    puzzleGrid[8][1] = {t:8, r:0}; 
-    puzzleGrid[8][0] = {t:6, r:0}; 
-
+    puzzleGrid[0][0] = {t:5, r:0};
+    puzzleGrid[0][1] = {t:3, r:0};
+    puzzleGrid[0][2] = {t:2, r:1};
+    puzzleGrid[1][2] = {t:1, r:1};
+    puzzleGrid[2][2] = {t:3, r:1};
+    puzzleGrid[2][3] = {t:1, r:0};
+    puzzleGrid[2][4] = {t:2, r:1};
+    puzzleGrid[3][4] = {t:1, r:1};
+    puzzleGrid[4][4] = {t:3, r:1};
+    puzzleGrid[4][5] = {t:1, r:0};
+    puzzleGrid[4][6] = {t:2, r:1};
+    puzzleGrid[5][6] = {t:1, r:1};
+    puzzleGrid[6][6] = {t:3, r:2};
+    puzzleGrid[6][5] = {t:1, r:0};
+    puzzleGrid[6][4] = {t:2, r:1};
+    puzzleGrid[7][4] = {t:1, r:1};
+    puzzleGrid[8][4] = {t:3, r:2};
+    puzzleGrid[8][3] = {t:1, r:0};
+    puzzleGrid[8][2] = {t:8, r:0};
+    puzzleGrid[8][1] = {t:8, r:0};
+    puzzleGrid[8][0] = {t:6, r:0};
     puzzleGrid[1][1] = {t:2, r:0};
     puzzleGrid[2][1] = {t:1, r:1};
     puzzleGrid[3][1] = {t:3, r:0};
@@ -63,15 +68,14 @@ function initPuzzle() {
     puzzleGrid[5][3] = {t:1, r:1};
     puzzleGrid[6][3] = {t:2, r:1};
     puzzleGrid[7][3] = {t:2, r:0};
-    puzzleGrid[8][3] = {t:2, r:0}; 
-    
+    puzzleGrid[8][3] = {t:2, r:0};
     S.puzzleSolved = false;
     S.key_in_puzzle = false;
-    S.inv = S.inv.filter(item => item !== 'key'); 
+    S.inv = S.inv.filter(item => item !== 'key');
     if(S.found.key) S.inv.push('key');
 }
 
-const HOTSPOTS=[ 
+const HOTSPOTS=[
  ['key',800,700,48,'А вот и путь к свободе из своего спокойствия.'],
  ['cigarette',562,440,22,'Так вот куда я её уронил.'],
  ['matches',493,535,35,'Ну спички у меня всегда с собой.'],
@@ -153,6 +157,30 @@ const H7=[
  {id:'seatC',t:'r',a:[712,520,830,620]}
 ];
 
+// back6mid - Остановка
+const HB6M=[
+ {id:'shelter',t:'r',a:[300,300,600,600],say:'Остановка. Пусто.'},
+ {id:'trash',t:'r',a:[150,500,250,620],say:'Мусорка.'},
+ {id:'sign',t:'r',a:[900,100,1000,400],say:'Дорожный знак.'}
+];
+// back6left - Гаражи
+const HB6L=[
+ {id:'dog',t:'r',a:[DOG.x-80,DOG.y-30,DOG.x+DOG.w+40,DOG.y+DOG.h+20]},
+ {id:'garage1',t:'r',a:[150,350,450,700],say:'Закрытые гаражи. Интересно, что там внутри?'},
+ {id:'garage2',t:'r',a:[480,380,680,720],say:'Ржавая дверь гаража, замок навесной.'},
+ {id:'car',t:'r',a:[740,490,920,620],say:'Старая «шестёрка». Кажется, она здесь надолго.'},
+ {id:'lamp',t:'r',a:[930,50,1000,500],say:'Фонарь светит, но толку от него немного.'},
+ {id:'fence',t:'r',a:[900,550,1080,720],say:'Сетка-рабица. Через неё видно тёмный двор.'}
+];
+// back6right - Магазины (хитбоксы сдвинуты левее, чтобы булочная ловилась по центру)
+const HB6R=[
+ {id:'produkty',t:'r',a:[20,300,220,700],say:'«Продукты». Витрина светится, но внутри пусто.'},
+ {id:'pivo',t:'r',a:[220,300,420,700],say:'«Пиво». Самое популярное место в этом районе.'},
+ {id:'svyaz',t:'r',a:[420,300,620,700],say:'«Связь». Сим-карты, телефоны, ремонт.'},
+ {id:'bulochka',t:'r',a:[620,300,820,700],say:'«Булочная». Отсюда всегда пахнет свежим хлебом.'},
+ {id:'lamp',t:'r',a:[950,50,1050,500],say:'Уличный фонарь.'}
+];
+
 function hit(L,x,y){for(const z of L){const a=z.a;if(z.t=='r'?(x>=a[0]&&x<=a[2]&&y>=a[1]&&y<=a[3]):(((x-a[0])/a[2])**2+((y-a[1])/a[3])**2<=1))return z}return null}
 function hit4(x,y){for(const z of H4){const a=z.a;if(z.t=='r'?(x>=a[0]&&x<=a[2]&&y>=a[1]&&y<=a[3]):(((x-a[0])/a[2])**2+((y-a[1])/a[3])**2<=1))return z}return null}
 function hit5(x,y){for(const z of H5){const a=z.a;if(z.t=='r'?(x>=a[0]&&x<=a[2]&&y>=a[1]&&y<=a[3]):(((x-a[0])/a[2])**2+((y-a[1])/a[3])**2<=1))return z}return null}
@@ -176,7 +204,7 @@ function playChordSound(name) {
         const t = AC.currentTime;
         notes.forEach(f => {
             const o = AC.createOscillator(), v = AC.createGain();
-            o.type = 'triangle'; 
+            o.type = 'triangle';
             o.frequency.setValueAtTime(f, t);
             v.gain.setValueAtTime(0.15, t);
             v.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
@@ -210,10 +238,86 @@ async function init(){
  IMG.back2=await load('images/backs/back2.jpg'); IMG.back3=await load('images/backs/back3.jpg');
  IMG.back3n=await load('images/backs/back3n.jpg');
  IMG.back4=await load('images/backs/back4.jpg'); IMG.back5=await load('images/backs/back5.jpg');
- IMG.puzzle_bg=await load('images/puzzle_bg.jpg'); 
+ IMG.back6mid=await load('images/backs/back6mid.jpg');
+ IMG.back6left=await load('images/backs/back6left.jpg');
+ IMG.back6right=await load('images/backs/back6right.jpg');
+ IMG.dog=await load('images/character/dog_angry.png');
+ IMG.puzzle_bg=await load('images/puzzle_bg.jpg');
  music.play().then(()=>{if(S.scene=='splash')S.scene='menu'}).catch(()=>{});requestAnimationFrame(loop);
 }
 function fit(){const k=Math.min(innerWidth/W,innerHeight/H);cv.style.width=W*k+'px';cv.style.height=H*k+'px'}
+
+// ==== Отладочное меню: наберите 178500 ====
+const DBG_CODE='178500';
+const LEVEL_PRESETS={
+ l1:{inv:['guitar'],found:{}},
+ l2:{inv:['guitar','key','cigarette','matches','texts'],found:{key:1,cigarette:1,matches:1,texts:1}},
+ l3:{inv:['guitar','key','cigarette','matches','texts','dirtbottle','hanky'],found:{key:1,cigarette:1,matches:1,texts:1,dirtbottle:1,hanky:1}},
+ l4:{inv:['guitar','key','cigarette','matches','texts','basbook','cleanbottle'],found:{key:1,cigarette:1,matches:1,texts:1,basbook:1,dirtbottle:1,hanky:1},placed:1,screwdriver_ground:1},
+ l5:{inv:['guitar','key','cigarette','matches','texts','screwdriver'],found:{key:1,cigarette:1,matches:1,texts:1,basbook:1,dirtbottle:1,hanky:1,screwdriver_ground:1},placed:1},
+ l6:{inv:['guitar','key','cigarette','matches','texts','brokenmediator'],found:{key:1,cigarette:1,matches:1,texts:1,basbook:1,dirtbottle:1,hanky:1,brokenmediator:1},placed:1,guySmoked:true},
+ l7:{inv:['guitar','key','matches','texts','mediator'],found:{key:1,cigarette:1,matches:1,texts:1,basbook:1,dirtbottle:1,hanky:1,brokenmediator:1},placed:1,guySmoked:true,hpFixed:true,busReady:true,l6seen:true},
+ back6mid:{inv:['guitar','key','matches','texts','mediator'],found:{key:1,cigarette:1,matches:1,texts:1,basbook:1,dirtbottle:1,hanky:1,brokenmediator:1},placed:1,guySmoked:true,hpFixed:true,busReady:true,l6seen:true},
+ back6left:{inv:['guitar','key','matches','texts','mediator'],found:{key:1,cigarette:1,matches:1,texts:1,basbook:1,dirtbottle:1,hanky:1,brokenmediator:1},placed:1,guySmoked:true,hpFixed:true,busReady:true,l6seen:true},
+ back6right:{inv:['guitar','key','matches','texts','mediator'],found:{key:1,cigarette:1,matches:1,texts:1,basbook:1,dirtbottle:1,hanky:1,brokenmediator:1},placed:1,guySmoked:true,hpFixed:true,busReady:true,l6seen:true}
+};
+function dbgStopAll(){[music,tick,eve,step,drip,streetMusic,theme2,busSnd,tsoy,letov,applause,dogBark].forEach(a=>{a.pause();a.currentTime=0})}
+function dbgEnterLevel(id){
+ const p=LEVEL_PRESETS[id];if(!p)return;
+ S.inv=p.inv.slice();S.found=Object.assign({},p.found);S.held=null;S.bubble=null;S.queue=[];
+ S.placed=p.placed||0;S.guySmoked=!!p.guySmoked;S.hpFixed=!!p.hpFixed;S.busReady=!!p.busReady;S.l6seen=!!p.l6seen;
+ S.screwdriver_broken=false;S.puzzleActive=false;S.puzzleKind=null;S.chord=null;S.key_in_puzzle=false;
+ S.conductorClicks=0;S.rub=0;S.seatMoney=false;S.busGivers={};S.busPaid=false;S.needSeat=false;
+ S.tsoyStarted=false;S.tsoyComplete=false;S.tsoyPlaying=false;S.chordSolved=false;S.concertPlaying=false;S.concertDone=false;
+ clearTimeout(S.tsoyTimer);tsoy.onended=null;
+ S.dbg=false;S.dbuf='';S.fade=null;
+ if(id==='l1'){tick.play().catch(()=>{});mt=.12;S.scene='l1';return}
+ if(id==='l2'){eve.play().catch(()=>{});startL2(150);return}
+ if(id==='l3'){drip.play().catch(()=>{});startL3(150);return}
+ if(id==='l4'){streetMusic.play().catch(()=>{});startL4(150);return}
+ if(id==='l5'){music.play().catch(()=>{});streetMusic.play().catch(()=>{});startL5(150);return}
+ if(id==='l6'){theme2.play().catch(()=>{});streetMusic.play().catch(()=>{});startL6();return}
+ if(id==='back6mid'){streetMusic.play().catch(()=>{});startBack6Mid();return}
+ if(id==='back6left'){eve.play().catch(()=>{});startBack6Left();return}
+ if(id==='back6right'){streetMusic.play().catch(()=>{});startBack6Right();return}
+ startL7();
+}
+const DBG_KEYS=['l1','l2','l3','l4','l5','l6','l7','back6mid','back6left','back6right'];
+const DBG_NAMES={l1:'Квартира Зета',l2:'Двор',l3:'Туннель и памятник',l4:'Улица со светофором',l5:'Магазины',l6:'Автобусная остановка',l7:'Автобус',back6mid:'Остановка',back6left:'Гаражи',back6right:'Магазины'};
+const DBG_POS=[[300,220],[700,220],[300,340],[700,340],[300,460],[700,460],[300,580],[700,580],[300,700],[700,700]];
+function dbgClick(x,y){
+ for(let i=0;i<DBG_KEYS.length;i++){const[px,py]=DBG_POS[i];if(Math.abs(x-px)<130&&Math.abs(y-py)<50){dbgEnterLevel(DBG_KEYS[i]);return}}
+ if(Math.abs(x-500)<130&&Math.abs(y-850)<50){S.dbg=false;S.dbuf='';return}
+}
+function drawDbgMenu(t){
+ g.fillStyle='#141008';g.fillRect(0,0,W,H);
+ g.textAlign='center';g.textBaseline='middle';
+ g.font='64px "Amatic SC"';g.fillStyle='#e6cd96';
+ g.fillText('Выбор уровня',W/2,100);
+ for(let i=0;i<DBG_KEYS.length;i++){
+   const[px,py]=DBG_POS[i],hov=Math.abs(S.mx-px)<130&&Math.abs(S.my-py)<50;
+   g.fillStyle=hov?'rgba(230,205,150,.25)':'rgba(230,205,150,.08)';
+   g.strokeStyle='#e6cd96';g.lineWidth=2;
+   g.beginPath();g.roundRect?g.roundRect(px-130,py-50,260,100,12):g.rect(px-130,py-50,260,100);g.fill();g.stroke();
+   g.font='32px "Amatic SC"';g.fillStyle='#f1e2bd';
+   g.fillText((i+1)+'. '+DBG_NAMES[DBG_KEYS[i]],px,py);
+ }
+ const hov=Math.abs(S.mx-500)<130&&Math.abs(S.my-850)<50;
+ g.fillStyle=hov?'rgba(230,205,150,.25)':'rgba(230,205,150,.08)';
+ g.strokeStyle='#e6cd96';g.lineWidth=2;
+ g.beginPath();g.roundRect?g.roundRect(370,800,260,100,12):g.rect(370,800,260,100);g.fill();g.stroke();
+ g.font='36px "Amatic SC"';g.fillStyle='#f1e2bd';g.fillText('Вернуться',500,850);
+ g.textAlign='left';g.textBaseline='top';
+}
+addEventListener('keydown',e=>{
+ if(e.key==='Escape'){S.dbg=false;S.dbuf='';return}
+ if(/^[0-9]$/.test(e.key)){
+   S.dbuf=(S.dbuf+e.key).slice(-DBG_CODE.length);
+   if(S.dbuf===DBG_CODE){dbgStopAll();S.dbg=true;S.dbuf=''}
+ } else if(S.dbg&&/^[1-9]$/.test(e.key)){
+   const idx=parseInt(e.key)-1;if(DBG_KEYS[idx])dbgEnterLevel(DBG_KEYS[idx]);
+ }
+});
 addEventListener('keydown',()=>{if(S.scene=='splash')S.scene='menu'});
 addEventListener('resize',fit);fit();
 function pos(e){const r=cv.getBoundingClientRect();S.mx=(e.clientX-r.left)*W/r.width;S.my=(e.clientY-r.top)*H/r.height}
@@ -222,38 +326,25 @@ addEventListener('mouseup',()=>{S.down=false;hpUp()});
 addEventListener('contextmenu',e=>e.preventDefault());
 addEventListener('mousedown',e=>{
     pos(e);S.down=true;ensureMusic();if(S.fade)return;
-    
     if(S.tsoyPlaying || S.concertPlaying) return;
-
     if(S.bubble && S.queue.length){const q=S.queue.shift();say(q.t,q.cx,q.cy);if(q.fn)q.fn();return;}
-    
-    if(S.bubble) {
-        S.bubble = null;
-        S.bubbleCX = undefined;
-        S.bubbleCY = undefined;
-    }
-
+    if(S.bubble) { S.bubble = null; S.bubbleCX = undefined; S.bubbleCY = undefined; }
     if(S.puzzleActive){
-        if(S.my > 745) {
-            click(S.mx, S.my);
-        } else {
+        if(S.my > 745) { click(S.mx, S.my); }
+        else {
             if(S.puzzleKind==='hp')hpDown(S.mx,S.my);
             else if(S.puzzleKind==='chord')clickChord(S.mx,S.my);
             else clickPuzzle(S.mx, S.my);
         }
         return;
     }
-    
     click(S.mx,S.my);
 });
 
 function say(t, cx, cy){
-    if(cx !== undefined) {
-        cx = Math.max(20, Math.min(W - 320, cx));
-    }
-    if(cy !== undefined) {
-        cy = Math.max(20, Math.min(H - 300, cy));
-    }
+    if(S.scene && S.scene.indexOf('back6')===0){ cx=20; if(cy===undefined)cy=100; }
+    if(cx !== undefined) { cx = Math.max(20, Math.min(W - 320, cx)); }
+    if(cy !== undefined) { cy = Math.max(20, Math.min(H - 300, cy)); }
     S.bubble=t; S.bubbleCX=cx; S.bubbleCY=cy;
 }
 function fadeTo(cb){S.fade={a:0,ph:1,cb}}
@@ -264,6 +355,29 @@ function startL4(px=150){S.scene='l4';eve.pause();drip.pause();streetMusic.play(
 function startL5(px=150){S.scene='l5';theme2.pause();busSnd.pause();music.play().catch(()=>{});eve.pause();drip.pause();streetMusic.play().catch(()=>{});S.px=px;S.tx=px;S.dir=1;S.held=null}
 function startL6(){S.scene='l6';music.pause();busSnd.pause();theme2.play().catch(()=>{});eve.pause();drip.pause();streetMusic.play().catch(()=>{});S.px=100;S.tx=100;S.dir=1;S.held=null;
  if(!S.l6seen){S.l6seen=true;say('Вот же напасть. А денег то у меня нет на проезд.', S.px - 50, 100)}}
+
+function startBack6Mid(){
+ S.scene='back6mid';
+ music.pause();tick.pause();theme2.pause();busSnd.pause();drip.pause();eve.pause();
+ streetMusic.play().catch(()=>{});
+ S.px=100;S.tx=100;S.dir=1;S.held=null;
+ S.bubble=null;S.bubbleCX=undefined;S.bubbleCY=undefined;
+}
+function startBack6Left(){
+ S.scene='back6left';
+ music.pause();tick.pause();theme2.pause();busSnd.pause();drip.pause();streetMusic.pause();
+ eve.play().catch(()=>{});
+ S.px=100;S.tx=100;S.dir=1;S.held=null;
+ S.bubble=null;S.bubbleCX=undefined;S.bubbleCY=undefined;
+}
+function startBack6Right(){
+ S.scene='back6right';
+ music.pause();tick.pause();theme2.pause();busSnd.pause();drip.pause();eve.pause();
+ streetMusic.play().catch(()=>{});
+ S.px=100;S.tx=100;S.dir=1;S.held=null;
+ S.bubble=null;S.bubbleCX=undefined;S.bubbleCY=undefined;
+}
+
 function startL7(){
  S.scene='l7';
  streetMusic.pause();
@@ -300,9 +414,9 @@ function startL7(){
    applause.pause();applause.currentTime=0;
    const idx=S.inv.indexOf('rub5');
    if(idx>=0)S.inv.splice(idx,1);
-   say('Кондуктор: "Так, граждане пассажиры. Оплачиваем проезд."', 800, 80);
+   say('Кондуктор: "Так, граждане пассажиры. Оплачиваем проезд. С вас 25 рублей."', 800, 80);
  }else{
-   say('Кондуктор: "Оплачиваем проезд."', 800, 80);
+   say('Кондуктор: "Оплачиваем проезд. С вас 25 рублей."', 800, 80);
  }
 }
 
@@ -344,29 +458,22 @@ function startTsoy(){
   };
 
   if(firstPlay){
-    // Первый раз — трек играет полностью
     tsoy.onended = () => {
       restoreAfterTsoy();
-
       if(S.scene === 'l7' && !S.puzzleActive){
         say('Дед: "Что ты там брякаешь? Из-за автобуса ничего не слышно!"', 520, 100);
       }
     };
-
     tsoy.play().catch(()=>{});
   } else {
-    // Последующие разы — 5 секунд и дед перебивает
     S.tsoyTimer = setTimeout(() => {
       tsoy.pause();
       tsoy.currentTime = 0;
-
       restoreAfterTsoy();
-
       if(S.scene === 'l7' && !S.puzzleActive){
         say('Дед: "Плохо слышишь чтоль? Не слышно гитару, говорю!"', 520, 100);
       }
     }, 5000);
-
     tsoy.play().catch(()=>{});
   }
 }
@@ -424,7 +531,7 @@ function combine(h,o){
  if(hk&&[h,o].includes('dirtbottle')){
   if(hk=='wethanky'){
     S.inv[S.inv.indexOf('dirtbottle')]='cleanbottle';
-    S.inv.splice(S.inv.indexOf('wethanky'), 1); 
+    S.inv.splice(S.inv.indexOf('wethanky'), 1);
     say('Ну вот вчерашний слой грязи наконец убран. Платок изгваздался, выброшу его.', S.px - 50, 100);beep()
   }
   else say('Грязь присохла. Платок пачкается, а бутылка чище не становится.', S.px - 50, 100)
@@ -432,14 +539,25 @@ function combine(h,o){
 }
 
 function useItem(h,x,y){
- const sceneList = {l2:H2,l3:H3,l4:H4,l5:H5,l6:H6,l7:H7}[S.scene]||H5;
+ const firstPerson = S.scene.indexOf('back6')===0;
+ const sceneList = {l2:H2,l3:H3,l4:H4,l5:H5,l6:H6,l7:H7,back6left:HB6L,back6mid:HB6M,back6right:HB6R}[S.scene]||H5;
  let z = hit(sceneList,x,y);
- 
- // Приоритет Зета в автобусе
+
  if (S.scene === 'l7' && Math.abs(x - S.px) < 120 && y > 250 && y < 760) z = null;
 
  const id=z&&z.id;
- const self = Math.abs(x-S.px)<100 && y>330 && y<800;
+ const self = !firstPerson && Math.abs(x-S.px)<100 && y>330 && y<800;
+
+ if(firstPerson){
+   if(z && id==='dog'){
+     dogBark.currentTime=0;dogBark.play().catch(()=>{});
+     say('Злая собака нам не товарищ, дальше не пропустит');
+     return;
+   }
+   if(z && z.say){ say(z.say); return; }
+   say(NOPE);
+   return;
+ }
 
  if(S.scene==='l7' && h==='guitar'){
    if(id==='conductor'){say('Кондуктор: "Ты ещё и гитару украл где-то?"', 800, 80);return}
@@ -529,15 +647,11 @@ function useItem(h,x,y){
        if(h=='rub5'){
          if(S.busPaid){say('Кондуктор: "Проезд уже оплачен."', 800, 80);return}
          if(S.rub<25){
-           say(S.concertDone?'Кондуктор: "Ты хорошо сыграл. Но проезд всё равно стоит дороже."':'Кондуктор: "Этого мало!"', 800, 80);
+           say(S.concertDone?'Кондуктор: "Ты хорошо сыграл. Но проезд всё равно стоит 25 рублей."':'Кондуктор: "Этого мало! Проезд стоит 25 рублей!"', 800, 80);
            return;
          }
          S.rub-=25;
-         if(S.rub<=0){
-           S.rub=0;
-           const idx=S.inv.indexOf('rub5');
-           if(idx>=0)S.inv.splice(idx,1);
-         }
+         if(S.rub<=0){ S.rub=0; const idx=S.inv.indexOf('rub5'); if(idx>=0)S.inv.splice(idx,1); }
          S.busPaid=true;
          S.needSeat=true;
          beep();
@@ -580,6 +694,12 @@ function zoneClick(z){
      return;
  }
 
+ if(S.scene=='back6left' && id=='dog'){
+   dogBark.currentTime=0;dogBark.play().catch(()=>{});
+   say('Злая собака нам не товарищ, дальше не пропустит');
+   return;
+ }
+
  if(S.scene=='l7'){
    if(S.needSeat&&id.startsWith('seat')){
      S.needSeat=false;
@@ -587,19 +707,17 @@ function zoneClick(z){
      fadeTo(()=>{S.scene='l7end';theme2.pause();busSnd.pause();});
      return;
    }
-
    if(id=='conductor'){
      if(S.busPaid){say('Кондуктор: "Проезд оплачен, езжайте спокойно."', 800, 80);return}
      S.conductorClicks++;
      if(S.conductorClicks===1){
        say('Кондуктор: "Какая договорённость? Какая старушка с остановки? Никто мне ничего не говорил!"', 800, 80);
      }else{
-       say('Кондуктор: "Молодой человек! Оплачиваем проезд или на следующей остановке вас встретит милиция!"', 800, 80);
+       say('Кондуктор: "Молодой человек! Оплачиваем проезд — 25 рублей — или на следующей остановке вас встретит милиция!"', 800, 80);
        S.queue.push({t:'Нехорошая ситуация! Надо что-то придумывать и срочно...',cx:S.px-50,cy:100});
      }
      return;
    }
-
    if(id=='man'){
      if(S.concertDone&&!S.busGivers.man)giveRub('man','Мужчина: "Даже я отвлёкся от переписки. Держи пятёрку."', 50, 100);
      else if(S.concertPlaying)say('Мужчина: "Погоди, дай послушать."', 50, 100);
@@ -646,14 +764,10 @@ function zoneClick(z){
    if(id=='screwdriver_ground'){ if(S.found.screwdriver_ground){ S.inv.push('screwdriver'); S.found.screwdriver_ground = false; beep(); say('Подобрал отвертку. Пригодится в хозяйстве.', S.px - 50, 100); } return; }
    if(id=='men') { say('Дарова Зет. Выручай! Светофор не работает. А пиво уже заканчивается!', 300, 150); return; }
    if(id=='traffic_light') { say('Что ж, советская техника наконец-то сломалась. Надо поискать, где щиток у светофора.', S.px - 50, 100); return; }
-   if(id=='pole_base') { 
-       if(S.screwdriver_broken) {
-           S.puzzleActive = true;
-           beep();
-       } else {
-           say('Здесь пластина прикручена советскими болтами', S.px - 50, 100);
-       }
-       return; 
+   if(id=='pole_base') {
+       if(S.screwdriver_broken) { S.puzzleActive = true; beep(); }
+       else { say('Здесь пластина прикручена советскими болтами', S.px - 50, 100); }
+       return;
    }
  }
 if(S.scene=='l6'){
@@ -681,50 +795,38 @@ if(S.scene=='l6'){
  }
  if(S.scene=='l5'){
    if(id=='men') { say('Спасибо Зет! Спас нас от «засухи»!', 300, 150); return; }
-   if(id=='pole_base') { 
-       S.puzzleActive = true;
-       beep();
-       return;
-   }
-   if(id=='traffic_light') {
-       say('Тем и хороши старые технологии - они ремонтопригодные', S.px - 50, 100);
-       return;
-   }
+   if(id=='pole_base') { S.puzzleActive = true; beep(); return; }
+   if(id=='traffic_light') { say('Тем и хороши старые технологии - они ремонтопригодные', S.px - 50, 100); return; }
  }
- 
+
  const F={bin:['dirtbottle','Недопитая вчера бутылка джина. Я уронил её в грязь и выбросил.'],bench:['hanky','Кусок почти чистой ткани. Кто-то здесь вытирал слёзы платком.'],bin3:['basbook','Ужасно. Выбросили книгу. Собрание рассказов «Система Безопасности Раздела» Е.В. Бассуров']}[id];
  if(F){if(!S.found[F[0]]){S.found[F[0]]=1;S.inv.push(F[0]);beep();say(F[1], S.px - 50, 100)}return}
- 
+
  say(z.say, S.px - 50, 100)
 }
 
 function click(x,y){
  if(S.scene=='splash'){S.scene='menu';return}
+ if(S.dbg){dbgClick(x,y);return}
  if(S.scene=='menu'){if(x>362&&x<790&&y>675&&y<790)fadeTo(startL1);return}
- if(S.scene=='l7end')return;
+ if(S.scene=='l7end'){fadeTo(startBack6Mid);return}
  const panel=y>745;
- 
+
  if(panel){
      const i=SX.findIndex(s=>Math.abs(x-s)<52);
      if(i>=0&&Math.abs(y-SY)<52){
          const item = S.inv[i];
          if (S.held) {
-             if (item && item !== S.held) {
-                 combine(S.held, item);
-                 S.held = null;
-             } else {
-                 S.held = null;
-             }
-         } else if (item) {
-             S.held = item;
-         }
+             if (item && item !== S.held) { combine(S.held, item); S.held = null; }
+             else { S.held = null; }
+         } else if (item) { S.held = item; }
      }
      return;
  }
 
  if(S.held&&S.scene!='l1'){const h=S.held;S.held=null;useItem(h,x,y);return}
  if(S.held){say(NOPE, S.px - 50, 100);S.held=null;return}
- 
+
  if(S.scene=='l1'){
   if(x>1040&&x<1130&&y>672&&y<728){
    if(['cigarette','matches','texts','key'].every(k=>S.found[k]))fadeTo(startL2);
@@ -733,19 +835,32 @@ function click(x,y){
   for(const [id,hx,hy,r,t] of HOTSPOTS)if(Math.hypot(x-hx,y-hy)<r){
    if(!S.found[id]){S.found[id]=1;S.inv.push(id);beep();say(t, 690, 120)}
    return}
-  } else if(S.scene=='l6') {
+ } else if(S.scene=='l6') {
    if(y>672&&y<728&&x>25&&x<115){ fadeTo(()=>startL5(1080)); return; }
    if(S.busReady&&y>672&&y<728&&x>1040&&x<1130){ fadeTo(startL7); return; }
    const z=hit(H6,x,y); if(z){zoneClick(z);return}
    S.tx=Math.max(70,Math.min(1080,x));
  } else if(S.scene=='l7'){
-   if (Math.abs(x - S.px) < 120 && y > 250 && y < 760) {
-       S.tx=Math.max(70,Math.min(1080,x));
-       return;
-   }
+   if (Math.abs(x - S.px) < 120 && y > 250 && y < 760) { S.tx=Math.max(70,Math.min(1080,x)); return; }
    const z=hit(H7,x,y);
    if(z){zoneClick(z);return}
    S.tx=Math.max(70,Math.min(1080,x));
+ } else if(S.scene=='back6mid' || S.scene=='back6left' || S.scene=='back6right'){
+   // Навигация: остановка в центре, гаражи слева, магазины справа.
+   // Из гаражей только назад (вправо). Из магазинов только назад (влево).
+   if(S.scene=='back6mid'){
+     if(x>25&&x<115&&y>672&&y<728){ fadeTo(startBack6Left); return; } // в гаражи
+     if(x>1040&&x<1130&&y>672&&y<728){ fadeTo(startBack6Right); return; } // в магазины
+   } else if(S.scene=='back6left'){
+     if(x>1040&&x<1130&&y>672&&y<728){ fadeTo(startBack6Mid); return; } // назад на остановку
+     // левая стрелка неактивна
+   } else if(S.scene=='back6right'){
+     if(x>25&&x<115&&y>672&&y<728){ fadeTo(startBack6Mid); return; } // назад на остановку
+     // правая стрелка неактивна
+   }
+   const list = {back6left:HB6L, back6mid:HB6M, back6right:HB6R}[S.scene];
+   const z=hit(list,x,y);
+   if(z){zoneClick(z);return}
  } else if(S.scene=='l4' || S.scene=='l5') {
    if(x>25&&x<115&&y>672&&y<728){
        if(S.scene=='l4') { fadeTo(()=>{startL3(1080)}); }
@@ -753,7 +868,7 @@ function click(x,y){
    }
    if(x>1040&&x<1130&&y>672&&y<728){
      if(S.scene=='l5') { fadeTo(startL6); }
-     else say('Куда я пойду? Мне еще нужно разобраться со светофором.', S.px - 50, 100); 
+     else say('Куда я пойду? Мне еще нужно разобраться со светофором.', S.px - 50, 100);
      return;
    }
    const z = S.scene=='l4' ? hit4(x,y) : hit5(x,y);
@@ -763,10 +878,7 @@ function click(x,y){
   if(S.scene=='l3'&&y>672&&y<728){
    if(x>25&&x<115){fadeTo(()=>startL2(930));return}
    if(x>1040&&x<1130){
-       if(S.placed) {
-           initPuzzle(); 
-           fadeTo(startL4); 
-       }
+       if(S.placed) { initPuzzle(); fadeTo(startL4); }
        else { say('У меня есть стойкое ощущение что я что-то не сделал.', S.px - 50, 100); S.tx = 450; }
        return;
    }}
@@ -777,7 +889,7 @@ function click(x,y){
 }
 
 const P_SIZE = 75;
-const P_OX = 40; 
+const P_OX = 40;
 const P_OY = 20;
 
 function getConns(t, r) {
@@ -787,13 +899,13 @@ function getConns(t, r) {
     if (t===4) return ['L','R','U','D'];
     if (t===5) return ['R'];
     if (t===6) return ['R'];
-    if (t===8) return S.key_in_puzzle ? ['U','L','R'] : []; 
+    if (t===8) return S.key_in_puzzle ? ['U','L','R'] : [];
     return [];
 }
 
 function checkPuzzle() {
     const visited = new Set();
-    const q = [[0, 0]]; 
+    const q = [[0, 0]];
     visited.add('0,0');
     let isSolved = false;
     let current = 0;
@@ -801,9 +913,9 @@ function checkPuzzle() {
 
     while(current < q.length) {
         const [cx, cy] = q[current++];
-        if (cx === 0 && cy === 8) isSolved = true; 
+        if (cx === 0 && cy === 8) isSolved = true;
         const cell = puzzleGrid[cy][cx];
-        if(!cell) continue; 
+        if(!cell) continue;
         const conns = getConns(cell.t, cell.r);
         for (let c of conns) {
             const nx = cx + dirs[c][0], ny = cy + dirs[c][1];
@@ -824,47 +936,33 @@ function checkPuzzle() {
 function clickPuzzle(x, y) {
     if (x > 40 && x < 140 && y > 715 && y < 745) {
         S.puzzleActive = false;
-        if (S.scene === 'l4' && S.puzzleSolved) {
-            startL5(S.px); 
-        } else if (S.scene === 'l5' && !S.puzzleSolved) {
-            startL4(S.px); 
-        }
+        if (S.scene === 'l4' && S.puzzleSolved) { startL5(S.px); }
+        else if (S.scene === 'l5' && !S.puzzleSolved) { startL4(S.px); }
         return;
     }
-
     const cx = Math.floor((x - P_OX) / P_SIZE);
     const cy = Math.floor((y - P_OY) / P_SIZE);
     if (cx < 0 || cx >= 9 || cy < 0 || cy >= 9) return;
     const cell = puzzleGrid[cy][cx];
-
     if (cell.t === 8) {
         if (S.key_in_puzzle) {
-            S.key_in_puzzle = false;
-            S.inv.push('key');
-            beep();
+            S.key_in_puzzle = false; S.inv.push('key'); beep();
             say('Забрал ключ. Цепь разомкнута.', x - 150, y - 150);
             const res = checkPuzzle();
             if (S.puzzleSolved && !res.solved) S.puzzleSolved = false;
         } else if (S.held === 'key') {
-            S.inv.splice(S.inv.indexOf('key'), 1);
-            S.held = null;
-            S.key_in_puzzle = true;
-            beep();
+            S.inv.splice(S.inv.indexOf('key'), 1); S.held = null; S.key_in_puzzle = true; beep();
             say('Вот теперь контакт есть. На обратном пути заберу.', x - 150, y - 150);
             const res = checkPuzzle();
             if (res.solved && !S.puzzleSolved) {
                 S.puzzleSolved = true;
                 say('Цепь замкнута! Светофор снова работает. Нажмите ВЫХОД.', x - 150, y - 150);
             }
-        } else {
-            say('Здесь выгорели провода. Нужна перемычка.', x - 150, y - 150);
-        }
+        } else { say('Здесь выгорели провода. Нужна перемычка.', x - 150, y - 150); }
         return;
     }
-
     if ([1,2,3,4].includes(cell.t)) {
-        cell.r = (cell.r + 1) % 4;
-        beep();
+        cell.r = (cell.r + 1) % 4; beep();
         const res = checkPuzzle();
         if (res.solved && !S.puzzleSolved) {
             S.puzzleSolved = true;
@@ -877,15 +975,10 @@ function clickPuzzle(x, y) {
 }
 
 function drawPuzzle() {
-    g.save();
-    g.beginPath();
-    g.rect(0, 0, W, 745);
-    g.clip();
-    g.fillStyle = '#000';
-    g.fillRect(0, 0, W, 745);
+    g.save(); g.beginPath(); g.rect(0, 0, W, 745); g.clip();
+    g.fillStyle = '#000'; g.fillRect(0, 0, W, 745);
     if (IMG.puzzle_bg && IMG.puzzle_bg.width > 0) g.drawImage(IMG.puzzle_bg, 0, 0, W, 745);
     const result = checkPuzzle();
-
     for (let y = 0; y < 9; y++) {
         for (let x = 0; x < 9; x++) {
             const cell = puzzleGrid[y][x];
@@ -905,23 +998,21 @@ function drawPuzzle() {
             else if (cell.t === 4) { g.moveTo(-P_SIZE/2, 0); g.lineTo(P_SIZE/2, 0); g.moveTo(0, -P_SIZE/2); g.lineTo(0, P_SIZE/2); }
             else if (cell.t === 5) { g.moveTo(0, 0); g.lineTo(P_SIZE/2, 0); g.fillStyle = '#ffaa00'; g.arc(0, 0, 15, 0, Math.PI*2); g.fill(); }
             else if (cell.t === 6) { g.moveTo(0, 0); g.lineTo(P_SIZE/2, 0); g.fillStyle = '#00ff00'; g.arc(0, 0, 15, 0, Math.PI*2); g.fill(); }
-            else if (cell.t === 8) { 
-                g.strokeStyle = (S.key_in_puzzle && isPowered) ? '#ffaa00' : '#555'; 
+            else if (cell.t === 8) {
+                g.strokeStyle = (S.key_in_puzzle && isPowered) ? '#ffaa00' : '#555';
                 g.shadowBlur = (S.key_in_puzzle && isPowered) ? 10 : 0;
-                g.moveTo(-P_SIZE/2, 0); g.lineTo(P_SIZE/2, 0); 
-                g.moveTo(0, 0); g.lineTo(0, -P_SIZE/2); 
+                g.moveTo(-P_SIZE/2, 0); g.lineTo(P_SIZE/2, 0);
+                g.moveTo(0, 0); g.lineTo(0, -P_SIZE/2);
             }
             g.stroke();
             g.restore();
         }
     }
-
     if (S.key_in_puzzle) {
-        const kx = P_OX + 2 * P_SIZE; 
+        const kx = P_OX + 2 * P_SIZE;
         const ky = P_OY + 8 * P_SIZE + P_SIZE/2;
         g.save(); g.translate(kx, ky); g.rotate(Math.PI/4); icon('key', 0, 0, 160); g.restore();
     }
-
     g.fillStyle = '#331f1f'; g.fillRect(40, 715, 100, 30); g.strokeStyle = '#e6cd96'; g.lineWidth = 2; g.strokeRect(40, 715, 100, 30);
     g.fillStyle = '#e6cd96'; g.font = '24px "Amatic SC"'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('ВЫХОД', 90, 730);
     g.textAlign = 'left'; g.textBaseline = 'top';
@@ -1032,11 +1123,8 @@ function clickChord(x,y){
  if(x>40&&x<140&&y>715&&y<745){
    if(c.solved)startLetov();
    else{
-     S.puzzleActive=false;
-     S.puzzleKind=null;
-     S.chord=null;
-     theme2.volume=.7;
-     tsoy.pause();
+     S.puzzleActive=false; S.puzzleKind=null; S.chord=null;
+     theme2.volume=.7; tsoy.pause();
      say('Так, надо ещё подготовиться...', S.px - 50, 100);
    }
    return;
@@ -1044,26 +1132,16 @@ function clickChord(x,y){
  if(c.solved)return;
  for(const b of CHORD_BTNS){
    if(x>b.x-65&&x<b.x+65&&y>620&&y<700){
-     const zone=360;
-     const near=c.notes.find(n=>!n.hit&&Math.abs(n.x-zone)<65);
-     if(near&&near.type===b.n&&b.n===c.seq[c.target]){
-       near.hit=true;
-       c.notes=c.notes.filter(n=>n!==near);
-       c.score++;
-       c.target=(c.target+1)%4;
-       c.feedback='+1';
+     const noteHalf=45;
+     const inZone=c.notes.find(n=>!n.hit&&n.x+noteHalf>310&&n.x-noteHalf<410);
+     if(inZone&&inZone.type===b.n&&b.n===c.seq[c.target]){
+       inZone.hit=true;
+       c.notes=c.notes.filter(n=>n!==inZone);
+       c.score++; c.target=(c.target+1)%4; c.feedback='+1';
        playChordSound(b.n);
-       if(c.score>=16){
-         c.solved=true;
-         S.chordSolved=true;
-         say('Вспомнил!', W/2 - 150, 100);
-       }
+       if(c.score>=16){ c.solved=true; S.chordSolved=true; say('Вспомнил!', W/2 - 150, 100); }
      }else{
-       c.score=0;
-       c.target=0;
-       c.notes=[];
-       c.lastSpawn=c.time;
-       c.feedback='Ошибка!';
+       c.score=0; c.target=0; c.notes=[]; c.lastSpawn=c.time; c.feedback='Ошибка!';
        playErrorSound();
      }
      return;
@@ -1074,97 +1152,42 @@ function clickChord(x,y){
 function drawChordPuzzle(){
  const c=S.chord;
  if(!c)return;
- g.save();
- g.beginPath();
- g.rect(0,0,W,745);
- g.clip();
-
- g.fillStyle='rgba(0,0,0,.82)';
- g.fillRect(0,0,W,745);
- g.strokeStyle='#e6cd96';
- g.lineWidth=3;
- g.strokeRect(20,20,W-40,705);
-
- g.fillStyle='#e6cd96';
- g.font='42px "Amatic SC"';
- g.textAlign='center';
- g.textBaseline='middle';
+ g.save(); g.beginPath(); g.rect(0,0,W,745); g.clip();
+ g.fillStyle='rgba(0,0,0,.82)'; g.fillRect(0,0,W,745);
+ g.strokeStyle='#e6cd96'; g.lineWidth=3; g.strokeRect(20,20,W-40,705);
+ g.fillStyle='#e6cd96'; g.font='42px "Amatic SC"'; g.textAlign='center'; g.textBaseline='middle';
  g.fillText('Подбери народную мелодию: Am → F → C → E',W/2,60);
  g.font='32px "Amatic SC"';
  g.fillText('Очки: '+c.score+' / 16',W/2,110);
-
  const seqY=160;
  c.seq.forEach((s,i)=>{
    const sx=W/2-180+i*120;
    g.fillStyle=(i===c.target)?'#ffaa00':'#331f1f';
-   g.strokeStyle='#e6cd96';
-   g.lineWidth=2;
-   g.beginPath();
-   g.rect(sx-45,seqY-25,90,50);
-   g.fill();
-   g.stroke();
-   g.fillStyle=(i===c.target)?'#2a2010':'#e6cd96';
-   g.font='32px "Amatic SC"';
+   g.strokeStyle='#e6cd96'; g.lineWidth=2;
+   g.beginPath(); g.rect(sx-45,seqY-25,90,50); g.fill(); g.stroke();
+   g.fillStyle=(i===c.target)?'#2a2010':'#e6cd96'; g.font='32px "Amatic SC"';
    g.fillText(s,sx,seqY);
  });
-
- g.strokeStyle='#e6cd96';
- g.lineWidth=2;
- g.beginPath();
- g.moveTo(80,520);
- g.lineTo(W-80,520);
- g.stroke();
-
- g.strokeStyle='#ffaa00';
- g.lineWidth=4;
+ g.strokeStyle='#e6cd96'; g.lineWidth=2;
+ g.beginPath(); g.moveTo(80,520); g.lineTo(W-80,520); g.stroke();
+ g.strokeStyle='#ffaa00'; g.lineWidth=4;
  g.strokeRect(310,460,100,90);
- g.fillStyle='rgba(255,170,0,.12)';
- g.fillRect(310,460,100,90);
-
+ g.fillStyle='rgba(255,170,0,.12)'; g.fillRect(310,460,100,90);
  c.notes.forEach(n=>{
    if(n.hit)return;
-   g.fillStyle='#331f1f';
-   g.strokeStyle='#e6cd96';
-   g.lineWidth=3;
-   g.beginPath();
-   g.rect(n.x-45,480,90,70);
-   g.fill();
-   g.stroke();
-   g.fillStyle='#e6cd96';
-   g.font='40px "Amatic SC"';
-   g.fillText(n.type,n.x,515);
+   g.fillStyle='#331f1f'; g.strokeStyle='#e6cd96'; g.lineWidth=3;
+   g.beginPath(); g.rect(n.x-45,480,90,70); g.fill(); g.stroke();
+   g.fillStyle='#e6cd96'; g.font='40px "Amatic SC"'; g.fillText(n.type,n.x,515);
  });
-
  CHORD_BTNS.forEach(b=>{
-   g.fillStyle='#331f1f';
-   g.strokeStyle='#e6cd96';
-   g.lineWidth=3;
-   g.beginPath();
-   g.rect(b.x-65,620,130,80);
-   g.fill();
-   g.stroke();
-   g.fillStyle='#e6cd96';
-   g.font='34px "Amatic SC"';
-   g.fillText(b.n,b.x,660);
+   g.fillStyle='#331f1f'; g.strokeStyle='#e6cd96'; g.lineWidth=3;
+   g.beginPath(); g.rect(b.x-65,620,130,80); g.fill(); g.stroke();
+   g.fillStyle='#e6cd96'; g.font='34px "Amatic SC"'; g.fillText(b.n,b.x,660);
  });
-
- if(c.feedback){
-   g.fillStyle='#ffaa00';
-   g.font='30px "Amatic SC"';
-   g.fillText(c.feedback,W/2,590);
- }
-
- g.fillStyle='#331f1f';
- g.fillRect(40,715,100,30);
- g.strokeStyle='#e6cd96';
- g.lineWidth=2;
- g.strokeRect(40,715,100,30);
- g.fillStyle='#e6cd96';
- g.font='24px "Amatic SC"';
- g.fillText('ВЫХОД',90,730);
-
- g.textAlign='left';
- g.textBaseline='top';
+ if(c.feedback){ g.fillStyle='#ffaa00'; g.font='30px "Amatic SC"'; g.fillText(c.feedback,W/2,590); }
+ g.fillStyle='#331f1f'; g.fillRect(40,715,100,30); g.strokeStyle='#e6cd96'; g.lineWidth=2; g.strokeRect(40,715,100,30);
+ g.fillStyle='#e6cd96'; g.font='24px "Amatic SC"'; g.fillText('ВЫХОД',90,730);
+ g.textAlign='left'; g.textBaseline='top';
  g.restore();
 }
 
@@ -1181,59 +1204,52 @@ function icon(id,x,y,h){
  if(id=='wethanky'){icon('hanky',x,y,h);const r=h*.13,cx=x+h*.26,cy=y+h*.2;g.save();g.fillStyle='#4fa8e8';g.strokeStyle='#0d2a44';g.lineWidth=2;g.beginPath();g.moveTo(cx,cy-r*2);g.quadraticCurveTo(cx+r*1.5,cy-r*.2,cx+r,cy+r*.4);g.arc(cx,cy+r*.4,r,0,Math.PI);g.quadraticCurveTo(cx-r*1.5,cy-r*.2,cx,cy-r*2);g.fill();g.stroke();g.restore();return}
  if(id==='rub5'&&(!IMG.rub5||!IMG.rub5.width)){
    g.save();
-   g.fillStyle='#6b8f4e';
-   g.strokeStyle='#2a2010';
-   g.lineWidth=3;
-   g.beginPath();
-   g.rect(x-h*.35,y-h*.2,h*.7,h*.4);
-   g.fill();
-   g.stroke();
-   g.fillStyle='#f1e2bd';
-   g.font='28px "Amatic SC"';
-   g.textAlign='center';
-   g.textBaseline='middle';
+   g.fillStyle='#6b8f4e'; g.strokeStyle='#2a2010'; g.lineWidth=3;
+   g.beginPath(); g.rect(x-h*.35,y-h*.2,h*.7,h*.4); g.fill(); g.stroke();
+   g.fillStyle='#f1e2bd'; g.font='28px "Amatic SC"'; g.textAlign='center'; g.textBaseline='middle';
    g.fillText('5',x,y);
    g.restore();
    return;
  }
 const i=IMG[id];if(!i||!i.width)return;const w=h*i.width/i.height;g.drawImage(i,x-w/2,y-h/2,w,h)}
+
 function update(dt){
  if(mv!==mt){mv+=Math.sign(mt-mv)*Math.min(Math.abs(mt-mv),.4*dt);music.volume=mv}
  if(S.fade){const f=S.fade;f.a+=f.ph*dt/.6;if(f.ph==1&&f.a>=1){f.a=1;f.ph=-1;f.cb()}else if(f.ph==-1&&f.a<=0)S.fade=null}
- 
+
  if(S.tsoyPlaying || S.concertPlaying){
-     S.tx = S.px;
-     S.walk = 0;
+     S.tx = S.px; S.walk = 0;
+     if(!step.paused){step.pause();step.currentTime=0}
+ } else if(S.scene.indexOf('back6')===0){
+     S.px = S.tx; S.walk = 0;
      if(!step.paused){step.pause();step.currentTime=0}
  } else {
      const d=S.tx-S.px;
      if(S.scene!='l1'&&Math.abs(d)>3){S.dir=d>0?1:-1;S.px+=S.dir*Math.min(Math.abs(d),170*dt);S.walk+=dt;if(step.paused)step.play().catch(()=>{})}
      else{S.walk=0;if(!step.paused){step.pause();step.currentTime=0}}
  }
- 
  if(S.puzzleActive&&S.puzzleKind==='chord')updateChord(dt);
 }
 
 function draw(t){
  g.clearRect(0,0,W,H);
- if(S.scene=='splash'){g.fillStyle='#000';g.fillRect(0,0,W,H);g.font='60px "Amatic SC"';g.fillStyle='rgba(238,220,180,'+(.55+.45*Math.sin(t/400))+')';g.textAlign='center';g.textBaseline='middle';g.fillText('Нажмите, чтобы начать',W/2,H/2);g.textAlign='left'}
+ if(S.dbg){drawDbgMenu(t)}
+ else if(S.scene=='splash'){g.fillStyle='#000';g.fillRect(0,0,W,H);g.font='60px "Amatic SC"';g.fillStyle='rgba(238,220,180,'+(.55+.45*Math.sin(t/400))+')';g.textAlign='center';g.textBaseline='middle';g.fillText('Нажмите, чтобы начать',W/2,H/2);g.textAlign='left'}
  else if(S.scene=='menu'){drawImageSafe(IMG.logo,0,0,W,H)}
  else{
   if(S.scene=='l7end'){
-    g.fillStyle='#000';
-    g.fillRect(0,0,W,H);
-    g.font='60px "Amatic SC"';
-    g.fillStyle='#e6cd96';
-    g.textAlign='center';
-    g.textBaseline='middle';
-    g.fillText('Конец уровня',W/2,H/2);
-    g.textAlign='left';
-    g.textBaseline='top';
+    g.fillStyle='#000'; g.fillRect(0,0,W,H);
+    g.font='60px "Amatic SC"'; g.fillStyle='#e6cd96'; g.textAlign='center'; g.textBaseline='middle';
+    g.fillText('Конец уровня',W/2,H/2-40);
+    g.font='34px "Amatic SC"'; g.fillStyle='rgba(230,205,150,.6)';
+    g.fillText('Нажмите, чтобы продолжить',W/2,H/2+50);
+    g.textAlign='left'; g.textBaseline='top';
   } else {
-   const bg = {l1:IMG.back0,l2:IMG.back1,l3:IMG.back2,l4:IMG.back3,l5:IMG.back3n,l6:IMG.back4,l7:IMG.back5}[S.scene];
+   const firstPerson = S.scene.indexOf('back6')===0;
+   const bg = {l1:IMG.back0,l2:IMG.back1,l3:IMG.back2,l4:IMG.back3,l5:IMG.back3n,l6:IMG.back4,l7:IMG.back5,back6left:IMG.back6left,back6mid:IMG.back6mid,back6right:IMG.back6right}[S.scene];
    if(bg && bg.width > 0) g.drawImage(bg,0,0,W,H);
    else { g.fillStyle = '#1a1a1a'; g.fillRect(0,0,W,H); }
-   
+
    if(S.scene=='l1'){
     const f=IMG.front;drawImageSafe(f,355,52,f.width*.46,f.height*.46);
     if(!S.found.key){g.save();g.translate(800,700);g.rotate(-.35);icon('key',0,0,70);g.restore()}
@@ -1241,15 +1257,21 @@ function draw(t){
     wrap(HINT,320).forEach((l,i)=>g.fillText(l,60,70+i*34));
     const p=.75+.25*Math.sin(t/300),cx=1085,cy=700;g.save();g.globalAlpha=p;g.fillStyle='#e6cd96';g.strokeStyle='#2a2010';g.lineWidth=3;
     g.beginPath();[[-45,-12],[5,-12],[5,-28],[45,0],[5,28],[5,12],[-45,12]].forEach(([a,b],i)=>i?g.lineTo(cx+a,cy+b):g.moveTo(cx+a,cy+b));g.closePath();g.fill();g.stroke();g.restore();
+   } else if(firstPerson){
+     if(S.scene=='back6left'){
+       if(IMG.dog && IMG.dog.width>0) g.drawImage(IMG.dog, DOG.x, DOG.y, DOG.w, DOG.h);
+       arrow(1085,700,1,t); // только назад (вправо)
+     } else if(S.scene=='back6mid'){
+       arrow(70,700,-1,t);  // в гаражи
+       arrow(1085,700,1,t); // в магазины
+     } else if(S.scene=='back6right'){
+       arrow(70,700,-1,t);  // только назад (влево)
+     }
    } else if(S.scene=='l4') {
      if(S.found.screwdriver_ground) icon('screwdriver', 365, 695, 40);
-     arrow(70,700,-1,t); 
+     arrow(70,700,-1,t);
      const n=Math.floor(S.walk/.33)%2+1, im=IMG[(S.dir>0?'right':'left')+n];
-     if(im && im.width > 0) {
-        const ks=1.0;
-        const charY = 750; 
-        g.drawImage(im,S.px-111*ks,charY-318*ks,222*ks,318*ks);
-     }
+     if(im && im.width > 0) g.drawImage(im,S.px-111,750-318,222,318);
    } else if (S.scene=='l6') {
      arrow(70,700,-1,t); if(S.busReady) arrow(1085,700,1,t);
      const n=Math.floor(S.walk/.33)%2+1, im=IMG[(S.dir>0?'right':'left')+n];
@@ -1257,12 +1279,11 @@ function draw(t){
    } else if (S.scene=='l7') {
      const n=Math.floor(S.walk/.33)%2+1, im=IMG[(S.dir>0?'right':'left')+n];
      if(im && im.width > 0) {
-        const scale=1.6;
-        const w=222*scale, h=318*scale;
+        const scale=1.6; const w=222*scale, h=318*scale;
         g.drawImage(im, S.px-w/2, 760-h, w, h);
      }
    } else if (S.scene=='l5') {
-     arrow(1085,700,1,t); 
+     arrow(1085,700,1,t);
    } else {
     const n=Math.floor(S.walk/.33)%2+1, im=IMG[(S.dir>0?'right':'left')+n];
     if(S.placed&&S.scene=='l3')icon('cleanbottle',480,652,70);
@@ -1285,12 +1306,8 @@ function draw(t){
       if(id!==S.held)icon(id,SX[i],SY,84);
       if(id==='rub5'){
         g.save();
-        g.font='28px "Amatic SC"';
-        g.fillStyle='#ffe28a';
-        g.strokeStyle='#2a2010';
-        g.lineWidth=4;
-        g.textAlign='center';
-        g.textBaseline='middle';
+        g.font='28px "Amatic SC"'; g.fillStyle='#ffe28a'; g.strokeStyle='#2a2010'; g.lineWidth=4;
+        g.textAlign='center'; g.textBaseline='middle';
         g.strokeText('x'+Math.floor(S.rub/5),SX[i]+34,SY+30);
         g.fillText('x'+Math.floor(S.rub/5),SX[i]+34,SY+30);
         g.restore();
@@ -1302,26 +1319,23 @@ function draw(t){
  if(S.bubble && S.scene!=='l7end'){
   let bx = S.bubbleCX !== undefined ? S.bubbleCX : (S.scene=='l1'?690:S.px - 50);
   let by = S.bubbleCY !== undefined ? S.bubbleCY : (S.scene=='l1'?120:100);
-
   bx = Math.max(20, Math.min(W - 320, bx));
   by = Math.max(20, Math.min(H - 300, by));
 
+  // Облачко рисуем нормально, хвост смотрит влево (к Зету за экраном)
   drawImageSafe(IMG.voice,bx,by,300,238);
+
   g.font='32px "Amatic SC"';g.fillStyle='#f1e2bd';g.textAlign='center';g.textBaseline='middle';
   let L=wrap(S.bubble,210),lh=28;if(L.length>5){g.font='26px "Amatic SC"';L=wrap(S.bubble,230);lh=24}
   L.forEach((l,i)=>g.fillText(l,bx+150,by+100+(i-(L.length-1)/2)*lh));g.textAlign='left';
  }
- 
+
  if(S.held && S.scene!=='l7end')icon(S.held,S.mx+30,S.my+30,72);
 
  if(S.tsoyPlaying || S.concertPlaying){
-    g.font='48px "Amatic SC"';
-    g.fillStyle='#e6cd96';
-    g.textAlign='center';
-    g.textBaseline='middle';
+    g.font='48px "Amatic SC"'; g.fillStyle='#e6cd96'; g.textAlign='center'; g.textBaseline='middle';
     g.fillText('Зет играет...', W/2, H - 120);
-    g.textAlign='left';
-    g.textBaseline='top';
+    g.textAlign='left'; g.textBaseline='top';
  } else {
     g.save();g.translate(S.mx,S.my);if(S.down)g.rotate(-.35);drawImageSafe(IMG.cursor,-6,-6,50,50);g.restore();
  }
