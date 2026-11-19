@@ -1,1347 +1,619 @@
-<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><title>Зет в поисках себя</title>
-<style>html,body{margin:0;height:100%;background:#000;overflow:hidden;cursor:none}canvas{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);cursor:none}</style></head>
-<body><canvas id="c" width="1152" height="922"></canvas>
-<script>
-const W=1152,H=922,cv=document.getElementById('c'),g=cv.getContext('2d');
-const SRC={logo:'logos/logo',cursor:'icons/cursor',guitar:'icons/guitar',key:'icons/key1',matches:'icons/firesticks',cigarette:'icons/cigarette',texts:'icons/texts',voice:'icons/voice',dirtbottle:'icons/dirtbottle',cleanbottle:'icons/cleanbottle',hanky:'icons/hanky',basbook:'icons/basbook',screwdriver:'icons/screwdriver',brokenmediator:'icons/brokenmediator',mediator:'icons/mediator',rub5:'icons/5rub',front:'character/front',left1:'character/left1',left2:'character/left2',right1:'character/right1',right2:'character/right2'};
-const IMG={};
-const A=(u,v,l)=>{const a=new Audio(u);a.volume=v;a.loop=l;return a};
-const music=A('music/main_theme.mp3',.7,true),tick=A('sounds/clock-tick.mp3',.6,true),eve=A('sounds/backyard-evening.mp3',.7,true),step=A('sounds/step.mp3',.6,true),drip=A('sounds/kapli.mp3',1,true),streetMusic=A('sounds/street.mp3',.7,true),theme2=A('music/theme2.mp3',.7,true),busSnd=A('sounds/autobus.mp3',.7,true);
-const tsoy=A('music/tsoy.mp3',1.0,false),letov=A('music/letov.mp3',1.0,false),applause=A('sounds/applause.mp3',.8,false),dogBark=A('sounds/dogbark.mp3',.9,false);
-const load=u=>new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>{console.warn('Нет файла',u);r(i)};i.src=u});
-let mv=.7,mt=.7;
-function ensureMusic(){
- if(S.dbg)return;
- if(S.scene=='back6left'){if(eve.paused)eve.play().catch(()=>{});return;}
- if(S.scene=='back6mid'||S.scene=='back6right'){if(streetMusic.paused)streetMusic.play().catch(()=>{});return;}
- const t=(S.scene=='l6'||S.scene=='l7')?theme2:music;if(t.paused)t.play().catch(()=>{})
-}
-['pointerdown','keydown','touchstart'].forEach(e=>addEventListener(e,ensureMusic));
-const SX=[90,195,300,405,510,650,757,865,972],SY=810;
+<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><title>Зет в поисках себя</title><style>html,body{margin:0;height:100%;background:#000;overflow:hidden;cursor:none}canvas{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);cursor:none}</style></head><body><canvas id="c" width="1152" height="922"></canvas><script>window.PUZZLES=window.PUZZLES||{};window.LEVELS={"meta":{"title":"Зет в поисках себя","startScene":"l1","startInv":["guitar"],"nope":"Похоже это не сюда","base":"","menuImage":"images/logos/logo.png","menuMusic":"music/main_theme.mp3","startBox":[362,675,790,790],"cursor":"images/icons/cursor.png","voice":"images/icons/voice.png","font":"fonts/AmaticSC-Regular.ttf","framesDir":"images/character/","stepSound":"sounds/step.mp3","debugCode":"178500","puzzleScripts":[]},"speakers":[{"id":"zet","name":"Зет","color":"#e6cd96","plain":true,"bx":null,"by":null},{"id":"narr","name":"Описание","color":"#bbbbbb","plain":true,"bx":null,"by":null},{"id":"drunks","name":"Алкоголики","color":"#d9a066","plain":false,"bx":300,"by":150},{"id":"anatolich","name":"Анатолич","color":"#d9a066","plain":false,"bx":300,"by":150},{"id":"man","name":"Дядя","color":"#8fb4d9","plain":false,"bx":180,"by":90},{"id":"granny","name":"Бабушка","color":"#d98fb4","plain":false,"bx":380,"by":90},{"id":"guy","name":"Парень","color":"#8fd9a0","plain":false,"bx":650,"by":90},{"id":"conductor","name":"Кондуктор","color":"#e0605a","plain":false,"bx":800,"by":80},{"id":"busMan","name":"Мужчина","color":"#8fb4d9","plain":false,"bx":50,"by":100},{"id":"womanRed","name":"Женщина в красном","color":"#e05a8a","plain":false,"bx":320,"by":100},{"id":"oldMan","name":"Дед","color":"#c9b38a","plain":false,"bx":520,"by":100},{"id":"aunt","name":"Спящая тётка","color":"#b48fd9","plain":false,"bx":830,"by":100},{"id":"molodej1","name":"Молодёжь на балконе","color":"#e6cd96","plain":false,"bx":null,"by":null},{"id":"bandit1","name":"Лысый мужик","color":"#ff0000","plain":false,"bx":null,"by":null},{"id":"nonamer","name":"Неизвестный","color":"#400080","plain":false,"bx":null,"by":null}],"items":[{"id":"guitar","name":"Гитара","icon":"images/icons/guitar.png","self":"Пальцы болят, пожалуй не буду.","note":"С собой с самого начала","counterFlag":"","counterDiv":1,"drop":false},{"id":"key","name":"Ключ от дома","icon":"images/icons/key1.png","self":"Да, определённо это ключ от моего дома.","note":"Квартира, на полу","counterFlag":"","counterDiv":1,"drop":false},{"id":"cigarette","name":"Сигарета","icon":"images/icons/cigarette.png","self":"Закурить? Хорошая идея. Но зачем?","note":"Квартира","counterFlag":"","counterDiv":1,"drop":false},{"id":"matches","name":"Спички","icon":"images/icons/firesticks.png","self":"Не буду тратить источник огня впустую.","note":"Квартира (два места)","counterFlag":"","counterDiv":1,"drop":false},{"id":"texts","name":"Тексты песен","icon":"images/icons/texts.png","self":"Свои тексты я помню наизусть, а записи не для меня.","note":"Квартира, под одеждой","counterFlag":"","counterDiv":1,"drop":false},{"id":"dirtbottle","name":"Грязная бутылка джина","icon":"images/icons/dirtbottle.png","self":"Я вчера её не стал пить грязную и сейчас не стану.","note":"Двор, мусорка","counterFlag":"","counterDiv":1,"drop":false},{"id":"cleanbottle","name":"Чистая бутылка","icon":"images/icons/cleanbottle.png","self":"У меня много дел, выпивка может и подождать.","note":"Мокрый платок + грязная бутылка","counterFlag":"","counterDiv":1,"drop":false},{"id":"hanky","name":"Платок","icon":"images/icons/hanky.png","self":"Спасибо. Утёр пот. Вроде вечер, а жарковатая осень нынче.","note":"Двор, скамейка","counterFlag":"","counterDiv":1,"drop":false},{"id":"wethanky","name":"Мокрый платок","icon":"images/icons/hanky.png","self":"Мокрый платок мне сейчас ни к чему.","note":"Платок + лужа в туннеле","counterFlag":"","counterDiv":1,"drop":true},{"id":"basbook","name":"Книга Бассурова","icon":"images/icons/basbook.png","self":"Читал давненько. Бассуров уже давно на комиксы перешёл и видео.","note":"Туннель, мусорка","counterFlag":"","counterDiv":1,"drop":false},{"id":"screwdriver","name":"Отвёртка","icon":"images/icons/screwdriver.png","self":"ГОСТ 17199-88.","note":"Отдать книгу Анатоличу → отвёртка падает на землю","counterFlag":"","counterDiv":1,"drop":false},{"id":"brokenmediator","name":"Гнутый медиатор","icon":"images/icons/brokenmediator.png","self":"Кто его так изогнул? Я даже не могу разогнуть обратно.","note":"Остановка, мусорка","counterFlag":"","counterDiv":1,"drop":false},{"id":"mediator","name":"Медиатор","icon":"images/icons/mediator.png","self":"Хороший медиатор. И для гитары сгодится, и корпус вскрыть.","note":"Спички + гнутый медиатор","counterFlag":"","counterDiv":1,"drop":false},{"id":"rub5","name":"Пятаки","icon":"images/icons/5rub.png","self":"","note":"Автобус: под сиденьем и от пассажиров за концерт","counterFlag":"rub","counterDiv":5,"drop":false},{"id":"1coin","name":"1 монета","icon":"images/icons/1coin.png","self":"Блестящая, как новая","note":"","counterFlag":"","counterDiv":1,"drop":false},{"id":"2coins","name":"2 монеты","icon":"images/icons/2coins.png","self":"Блестящие две монеты. Как два золотых глаза.","note":"","counterFlag":"","counterDiv":1,"drop":false},{"id":"bone","name":"Кость","icon":"images/icons/bone.png","self":"Ароматная свежая кость, но сырая","note":"","counterFlag":"","counterDiv":1,"drop":false},{"id":"6coins","name":"6 монет","icon":"images/icons/6coins.png","self":"Богатство целое","note":"","counterFlag":"","counterDiv":1,"drop":false},{"id":"pack","name":"свёрток","icon":"images/icons/pack.png","self":"Надеюсь это не криминальное","note":"","counterFlag":"","counterDiv":1,"drop":false},{"id":"beer","name":"Пиво","icon":"images/icons/beernorm.png","self":"","note":"","counterFlag":"","counterDiv":1,"drop":false},{"id":"shakebeer","name":"Встрясённое пиво","icon":"images/icons/beershake.png","self":"","note":"","counterFlag":"","counterDiv":1,"drop":true},{"id":"key2","name":"Ключ2","icon":"images/icons/key2.png","self":"Неизвестно чей ключ","note":"","counterFlag":"","counterDiv":1,"drop":false}],"combos":[{"a":"matches","b":"brokenmediator","rules":[{"if":"","who":"zet","text":"Подогрел над спичкой, и пластик размяк. Теперь медиатор можно выровнять. Им ведь не только на гитаре играют, но и разбирают пластиковые корпуса, как лопаточкой.","bx":null,"by":null,"act":[{"t":"replace","item":"brokenmediator","item2":"mediator"}]}]},{"a":"wethanky","b":"dirtbottle","rules":[{"if":"","who":"zet","text":"Ну вот вчерашний слой грязи наконец убран. Платок изгваздался, выброшу его.","bx":null,"by":null,"act":[{"t":"replace","item":"dirtbottle","item2":"cleanbottle"},{"t":"take","item":"wethanky"}]}]},{"a":"hanky","b":"dirtbottle","rules":[{"if":"","who":"zet","text":"Грязь присохла. Платок пачкается, а бутылка чище не становится.","bx":null,"by":null,"act":[]}]},{"a":"mediator","b":"guitar","rules":[{"if":"scene != \"l7\"","who":"zet","text":"Похоже это не сюда","bx":null,"by":null,"act":[]},{"if":"chordSolved","who":"zet","text":"Я уже вспомнил эту мелодию.","bx":null,"by":null,"act":[]},{"if":"!tsoyComplete","who":"zet","text":"Сначала надо сыграть, чтобы вспомнить мелодию...","bx":null,"by":null,"act":[]},{"if":"","who":"zet","text":"Как там играется народная любимая песня? Надо быстро подобрать","bx":null,"by":null,"act":[{"t":"puzzle","puzzle":"chords"}]}]},{"a":"pack","b":"mediator","rules":[{"if":"","who":"zet","text":"Какое универсальное средство медиатор, и сыграть, и починить и даже упаковку вскрыть","bx":null,"by":null,"act":[{"t":"give","item":"6coins"},{"t":"say","who":"zet","text":"Опа! А молодёжь не поскупилась. Извинение за хамство принято..."},{"t":"take","item":"pack"}]}]}],"puzzles":[{"id":"pipes","name":"Щиток светофора","type":"pipes","desc":"Повернуть элементы цепи 9×9 от источника до светофора. Выгоревший участок замыкается ключом-перемычкой.","req":"has(key)","params":{"jumper":"key","bg":"images/puzzle_bg.jpg"},"onSolve":[{"if":"","who":"zet","text":"Цепь замкнута! Светофор снова работает. Нажмите ВЫХОД.","bx":null,"by":null,"act":[]}],"onExit":[{"if":"scene == \"l4\" && solved_pipes","who":"zet","text":"","bx":null,"by":null,"act":[{"t":"goto","scene":"l5","px":null}]},{"if":"scene == \"l5\" && !solved_pipes","who":"zet","text":"","bx":null,"by":null,"act":[{"t":"goto","scene":"l4","px":null}]}]},{"id":"headphones","name":"Наушники парня","type":"wires","desc":"Развести провода так, чтобы нигде не пересекались.","req":"has(mediator)","params":{"seed":11,"minCrossings":9,"title":"Наушники: разведи провода так, чтобы они нигде не пересекались"},"onSolve":[{"if":"","who":"zet","text":"Провода больше не пересекаются. Цепь замкнута. Можно закрывать корпус.","bx":null,"by":null,"act":[]}],"onExit":[{"if":"solved_headphones && !hpFixed","who":"guy","text":"Работает! Музыка снова со мной. Спасибо тебе!","bx":null,"by":null,"act":[{"t":"set","flag":"hpFixed","val":"1"}]}]},{"id":"chords","name":"Народная мелодия","type":"chords","desc":"Ритм-игра: попадать аккордами в зону по порядку.","req":"","params":{"seq":["Am","F","C","E"],"target":16,"title":"Подбери народную мелодию: Am → F → C → E"},"onSolve":[{"if":"","who":"zet","text":"Вспомнил!","bx":null,"by":null,"act":[{"t":"set","flag":"chordSolved","val":"1"}]}],"onExit":[{"if":"chordSolved && !concertDone","who":"narr","text":"Аплодисменты!","bx":400,"by":100,"act":[{"t":"sound","src":"music/letov.mp3","wait":"1","caption":"Зет играет..."},{"t":"set","flag":"concertDone","val":"1"}]},{"if":"!chordSolved","who":"zet","text":"Так, надо ещё подготовиться...","bx":null,"by":null,"act":[]}]},{"id":"keymaster","name":"Открытие рок-клуба","type":"custom2","desc":"","req":"","params":{},"onSolve":[{"if":"","who":"zet","text":"","bx":null,"by":null,"act":[{"t":"set","flag":"dooropen"}]}],"onExit":[]}],"scenes":[{"id":"l1","name":"Квартира Зета","note":"Собрать ключ, сигарету, спички, тексты. Подсказка на экране.","bg":"images/backs/back0.jpg","mode":"static","music":"music/main_theme.mp3","ambient":"sounds/clock-tick.mp3","startPx":576,"playerY":700,"playerScale":1,"walkMin":70,"walkMax":1080,"limitIf":"","limitMin":null,"limitMax":null,"walkThroughPlayer":0,"preset":null,"bubbleX":690,"bubbleY":120,"onEnter":[],"zones":[{"id":"key","name":"Ключ на полу","t":"e","a":[800,700,48,48],"look":[{"if":"!found(key)","who":"zet","text":"А вот и путь к свободе из своего спокойствия.","bx":null,"by":null,"act":[{"t":"give","item":"key"}]}],"use":[]},{"id":"cigarette","name":"","t":"e","a":[562,440,22,22],"look":[{"if":"!found(cigarette)","who":"zet","text":"Так вот куда я её уронил.","bx":null,"by":null,"act":[{"t":"give","item":"cigarette"}]}],"use":[]},{"id":"matches_a","name":"Спички (карман)","t":"e","a":[493,535,35,35],"look":[{"if":"!found(matches)","who":"zet","text":"Ну спички у меня всегда с собой.","bx":null,"by":null,"act":[{"t":"give","item":"matches"}]}],"use":[]},{"id":"matches_b","name":"Спички (второй карман)","t":"e","a":[596,549,35,35],"look":[{"if":"!found(matches)","who":"zet","text":"Ну спички у меня всегда с собой.","bx":null,"by":null,"act":[{"t":"give","item":"matches"}]}],"use":[]},{"id":"texts","name":"Тексты под одеждой","t":"e","a":[557,144,78,78],"look":[{"if":"!found(texts)","who":"zet","text":"Бумага под одеждой хорошо согревает.","bx":null,"by":null,"act":[{"t":"give","item":"texts"}]}],"use":[]}],"arrows":[{"id":"exit","x":1085,"y":700,"dir":1,"to":"l2","px":150,"if":"found(cigarette) && found(matches) && found(texts) && found(key)","showIf":"","act":[],"fail":[{"if":"","who":"zet","text":"Не стоит покидать дом с минимальным снаряжением.","bx":null,"by":null,"act":[]}]}],"sprites":[{"id":"zet_front","item":"","img":"images/character/front.png","x":355,"y":52,"h":70,"scale":0.46,"anchor":"tl","rot":0,"showIf":"","text":"","fontSize":38,"tw":320,"color":"#eedcb4cc"},{"id":"hint","item":"","img":"","x":60,"y":70,"h":70,"scale":null,"anchor":"tl","rot":0,"showIf":"","text":"Соберите всё необходимое чтобы покинуть жилище. Вещи могут лежать не только на видном месте, но и в скрытых местах. Например карман.","fontSize":38,"tw":320,"color":"#eedcb4cc"},{"id":"key_floor","item":"key","img":"","x":800,"y":700,"h":70,"scale":null,"anchor":"c","rot":-0.35,"showIf":"!found(key)","text":"","fontSize":38,"tw":320,"color":"#eedcb4cc"}]},{"id":"l2","name":"Двор","note":"","bg":"images/backs/back1.jpg","mode":"side","music":"","ambient":"sounds/backyard-evening.mp3","startPx":150,"playerY":700,"playerScale":1,"walkMin":70,"walkMax":1080,"limitIf":"","limitMin":null,"limitMax":null,"walkThroughPlayer":0,"preset":null,"bubbleX":null,"bubbleY":null,"onEnter":[],"zones":[{"id":"bin","name":"Мусорка","t":"r","a":[22,478,95,668],"look":[{"if":"!found(dirtbottle)","who":"zet","text":"Недопитая вчера бутылка джина. Я уронил её в грязь и выбросил.","bx":null,"by":null,"act":[{"t":"give","item":"dirtbottle"}]}],"use":[]},{"id":"bench","name":"Скамейка","t":"r","a":[838,525,985,612],"look":[{"if":"!found(hanky)","who":"zet","text":"Кусок почти чистой ткани. Кто-то здесь вытирал слёзы платком.","bx":null,"by":null,"act":[{"t":"give","item":"hanky"}]}],"use":[]},{"id":"tunnel","name":"Проход в туннель","t":"r","a":[885,360,1055,600],"look":[{"if":"","who":"zet","text":"","bx":null,"by":null,"act":[{"t":"goto","scene":"l3","px":150}]}],"use":[]},{"id":"door","name":"Дверь подъезда","t":"r","a":[90,310,190,595],"look":[{"if":"","who":"zet","text":"Дверь заперта... мной.","bx":null,"by":null,"act":[]}],"use":[{"item":"key","rules":[{"if":"","who":"zet","text":"Ключ подходит. Но зачем мне обратно?","bx":null,"by":null,"act":[]}]}]},{"id":"poster","name":"","t":"r","a":[1055,385,1122,497],"look":[{"if":"","who":"zet","text":"Афиша десятилетней давности. Какая-то забытая звезда 90-х приехать должна была.","bx":null,"by":null,"act":[]}],"use":[]},{"id":"manhole","name":"","t":"e","a":[965,702,78,24],"look":[{"if":"","who":"zet","text":"Дурно пахнет оттуда.","bx":null,"by":null,"act":[]}],"use":[]},{"id":"bike","name":"","t":"r","a":[218,388,284,497],"look":[{"if":"","who":"zet","text":"Уважаемые жильцы! Розыскивается велосипед Puky украденный с четвёртого этажа.","bx":null,"by":null,"act":[]}],"use":[]},{"id":"window","name":"","t":"r","a":[288,203,377,392],"look":[{"if":"","who":"zet","text":"А там молодая семья ужинают вместе за столом...","bx":null,"by":null,"act":[]}],"use":[]},{"id":"lamp","name":"","t":"r","a":[735,85,782,655],"look":[{"if":"","who":"zet","text":"Единственный источник яркого света здесь.","bx":null,"by":null,"act":[]}],"use":[]},{"id":"lamp_top","name":"","t":"e","a":[845,105,45,28],"look":[{"if":"","who":"zet","text":"Единственный источник яркого света здесь.","bx":null,"by":null,"act":[]}],"use":[]},{"id":"tree","name":"","t":"r","a":[398,25,700,200],"look":[{"if":"","who":"zet","text":"Осень здесь. Не люблю осень...","bx":null,"by":null,"act":[]}],"use":[]},{"id":"tree_trunk","name":"","t":"r","a":[398,200,472,385],"look":[{"if":"","who":"zet","text":"Осень здесь. Не люблю осень...","bx":null,"by":null,"act":[]}],"use":[]},{"id":"houses","name":"","t":"r","a":[560,180,722,385],"look":[{"if":"","who":"zet","text":"Счастливые светящиеся окна, счастливых людей вестимо.","bx":null,"by":null,"act":[]}],"use":[]},{"id":"houses_far","name":"","t":"r","a":[840,110,1130,262],"look":[{"if":"","who":"zet","text":"Счастливые светящиеся окна, счастливых людей вестимо.","bx":null,"by":null,"act":[]}],"use":[]}],"arrows":[],"sprites":[]},{"id":"l3","name":"Туннель и памятник","note":"Почтить деда Родиона чистой бутылкой — иначе дальше не пустит.","bg":"images/backs/back2.jpg","mode":"side","music":"","ambient":"sounds/kapli.mp3","startPx":150,"playerY":700,"playerScale":1.5,"walkMin":70,"walkMax":1080,"limitIf":"!placed","limitMin":null,"limitMax":450,"walkThroughPlayer":0,"preset":null,"bubbleX":null,"bubbleY":null,"onEnter":[],"zones":[{"id":"drips","name":"","t":"r","a":[674,412,702,582],"look":[{"if":"","who":"zet","text":"Кап-кап-кап... Пытка была такая китайская.","bx":null,"by":null,"act":[]}],"use":[{"item":"hanky","rules":[{"if":"","who":"zet","text":"Кап-кап, до утра подождём.","bx":null,"by":null,"act":[]}]}]},{"id":"pipe","name":"","t":"r","a":[626,25,694,415],"look":[{"if":"","who":"zet","text":"Дождь кончился два дня назад. Откуда вода льётся?","bx":null,"by":null,"act":[]}],"use":[]},{"id":"lamp","name":"","t":"r","a":[700,55,835,140],"look":[{"if":"","who":"zet","text":"Фонарь отражается от лужи и дополняет светом этот тёмный уголок.","bx":null,"by":null,"act":[]}],"use":[]},{"id":"puddle","name":"Лужа","t":"e","a":[705,598,85,28],"look":[{"if":"","who":"zet","text":"Свет фонаря отражается от лужи. Вода, похоже, чистая.","bx":null,"by":null,"act":[]}],"use":[{"item":"hanky","rules":[{"if":"","who":"zet","text":"Отлично. Платок увлажнён.","bx":null,"by":null,"act":[{"t":"replace","item":"hanky","item2":"wethanky"}]}]}]},{"id":"figure","name":"Памятное место деда Родиона","t":"e","a":[467,657,180,60],"look":[{"if":"placed","who":"zet","text":"Покойся с миром, дед Родион.","bx":null,"by":null,"act":[]},{"if":"","who":"zet","text":"Дед Родион вчера схлопотал сердечный. Забавный дед был. Постоянно выпивку клянчил. Почесть бы его память.","bx":null,"by":null,"act":[]}],"use":[{"item":"cleanbottle","rules":[{"if":"","who":"zet","text":"Покойся с миром, дед Родион. Надеюсь, там ты рад, что почтили твою память твоим любимым напитком.","bx":null,"by":null,"act":[{"t":"take","item":"cleanbottle"},{"t":"set","flag":"placed","val":"1"}]}]},{"item":"dirtbottle","rules":[{"if":"","who":"zet","text":"Дед конечно особой чистоплотностью не обладал. Но ставить в память ему грязную бутылку верх цинизма.","bx":null,"by":null,"act":[]}]}]},{"id":"bin3","name":"Мусорка","t":"r","a":[22,428,122,680],"look":[{"if":"!found(basbook)","who":"zet","text":"Ужасно. Выбросили книгу. Собрание рассказов «Система Безопасности Раздела» Е.В. Бассуров","bx":null,"by":null,"act":[{"t":"give","item":"basbook"}]}],"use":[]},{"id":"ad1","name":"","t":"r","a":[75,82,182,245],"look":[{"if":"","who":"zet","text":"Различные объявления для различных людей.","bx":null,"by":null,"act":[]}],"use":[]},{"id":"ad2","name":"","t":"r","a":[57,288,158,423],"look":[{"if":"","who":"zet","text":"Различные объявления для различных людей.","bx":null,"by":null,"act":[]}],"use":[]},{"id":"ad3","name":"","t":"r","a":[503,228,580,350],"look":[{"if":"","who":"zet","text":"Различные объявления для различных людей.","bx":null,"by":null,"act":[]}],"use":[]},{"id":"ad4","name":"","t":"r","a":[506,166,548,230],"look":[{"if":"","who":"zet","text":"Различные объявления для различных людей.","bx":null,"by":null,"act":[]}],"use":[]},{"id":"ad5","name":"","t":"r","a":[230,308,276,362],"look":[{"if":"","who":"zet","text":"Различные объявления для различных людей.","bx":null,"by":null,"act":[]}],"use":[]},{"id":"ad6","name":"","t":"r","a":[428,383,477,441],"look":[{"if":"","who":"zet","text":"Различные объявления для различных людей.","bx":null,"by":null,"act":[]}],"use":[]},{"id":"ad7","name":"","t":"r","a":[695,266,760,326],"look":[{"if":"","who":"zet","text":"Различные объявления для различных людей.","bx":null,"by":null,"act":[]}],"use":[]},{"id":"wall","name":"","t":"r","a":[235,170,480,360],"look":[{"if":"","who":"zet","text":"Нет ничего более постоянного чем временное...","bx":null,"by":null,"act":[]}],"use":[]},{"id":"crate","name":"","t":"r","a":[115,515,308,650],"look":[{"if":"","who":"zet","text":"Такое ощущение что он всегда здесь стоял.","bx":null,"by":null,"act":[]}],"use":[]},{"id":"poster","name":"","t":"r","a":[1066,230,1132,470],"look":[{"if":"","who":"zet","text":"Очередной агитплакат от депутата обещавшего всё здесь отремонтировать. Он победил на выборах, кстати.","bx":null,"by":null,"act":[]}],"use":[]}],"arrows":[{"id":"back","x":70,"y":700,"dir":-1,"to":"l2","px":930,"if":"","showIf":"","act":[],"fail":[]},{"id":"next","x":1085,"y":700,"dir":1,"to":"l4","px":150,"if":"placed","showIf":"","act":[],"fail":[{"if":"","who":"zet","text":"У меня есть стойкое ощущение что я что-то не сделал.","bx":null,"by":null,"act":[]}]}],"sprites":[{"id":"bottle_placed","item":"cleanbottle","img":"","x":480,"y":652,"h":70,"scale":null,"anchor":"c","rot":0,"showIf":"placed","text":"","fontSize":38,"tw":320,"color":"#eedcb4cc"}]},{"id":"l4","name":"Улица со светофором","note":"Книга → Анатолич → отвёртка → щиток → головоломка «цепь».","bg":"images/backs/back3.jpg","mode":"side","music":"sounds/street.mp3","ambient":"","startPx":150,"playerY":750,"playerScale":1,"walkMin":70,"walkMax":1080,"limitIf":"","limitMin":null,"limitMax":null,"walkThroughPlayer":0,"preset":null,"bubbleX":null,"bubbleY":null,"onEnter":[],"zones":[{"id":"box","name":"","t":"r","a":[130,620,240,720],"look":[{"if":"","who":"zet","text":"Днём здесь бабушка торгует семечками, а вечером Анатолич заявляет свои права на территорию","bx":null,"by":null,"act":[]}],"use":[]},{"id":"trash_bin","name":"","t":"r","a":[960,640,1080,740],"look":[{"if":"","who":"zet","text":"Ну у нас тут бутылки от компании Анатолича","bx":null,"by":null,"act":[]}],"use":[]},{"id":"men","name":"Компания Анатолича","t":"r","a":[40,380,340,730],"look":[{"if":"","who":"drunks","text":"Дарова Зет. Выручай! Светофор не работает. А пиво уже заканчивается!","bx":null,"by":null,"act":[]}],"use":[{"item":"cigarette","rules":[{"if":"","who":"drunks","text":"О! Покурить угощают!","bx":null,"by":null,"act":[{"t":"say","who":"zet","text":"Нет уж, последнюю сигарету попридержу у себя."}]}]},{"item":"texts","rules":[{"if":"","who":"drunks","text":"Нет. Такое не читаем!","bx":null,"by":null,"act":[]}]},{"item":"key","rules":[{"if":"","who":"drunks","text":"А что он открывает? Сейф с деньгами?","bx":null,"by":null,"act":[]}]},{"item":"matches","rules":[{"if":"","who":"zet","text":"Не буду тратить последний источник огня.","bx":null,"by":null,"act":[]}]},{"item":"basbook","rules":[{"if":"","who":"anatolich","text":"О! Моя книга нашлась! Спасибо! Жаль не вижу закладку-отвёртку.","bx":null,"by":null,"act":[{"t":"take","item":"basbook"},{"t":"set","flag":"sdGround","val":"1"}]}]}]},{"id":"traffic_light","name":"","t":"r","a":[480,120,540,330],"look":[{"if":"","who":"zet","text":"Что ж, советская техника наконец-то сломалась. Надо поискать, где щиток у светофора.","bx":null,"by":null,"act":[]}],"use":[]},{"id":"pole_base","name":"Щиток светофора","t":"r","a":[405,520,450,640],"look":[{"if":"screwdriverBroken","who":"zet","text":"","bx":null,"by":null,"act":[{"t":"puzzle","puzzle":"pipes"}]},{"if":"","who":"zet","text":"Здесь пластина прикручена советскими болтами","bx":null,"by":null,"act":[]}],"use":[{"item":"screwdriver","rules":[{"if":"","who":"zet","text":"Это была поддельная отвёртка, она сломалась, но щиток открутили","bx":null,"by":null,"act":[{"t":"take","item":"screwdriver"},{"t":"set","flag":"screwdriverBroken","val":"1"},{"t":"puzzle","puzzle":"pipes"}]}]}]},{"id":"road","name":"","t":"r","a":[350,450,1100,650],"look":[{"if":"","who":"zet","text":"Вроде вечер, а их как прорвало. Не перебежать","bx":null,"by":null,"act":[]}],"use":[]},{"id":"shop","name":"","t":"r","a":[610,330,870,480],"look":[{"if":"","who":"zet","text":"Народный магазин для страждущих о вечернем досуге. И не только вечернем","bx":null,"by":null,"act":[]}],"use":[]},{"id":"tree","name":"","t":"r","a":[200,50,300,450],"look":[{"if":"","who":"zet","text":"Совсем листьев нет. А ведь совсем недавно было зелено","bx":null,"by":null,"act":[]}],"use":[]},{"id":"lamp","name":"","t":"r","a":[840,50,940,350],"look":[{"if":"","who":"zet","text":"Ну хоть освещение нынче не подводит","bx":null,"by":null,"act":[]}],"use":[]},{"id":"houses","name":"","t":"r","a":[600,100,1100,300],"look":[{"if":"","who":"zet","text":"Всегда успокаивает свет в окне домов. Люди здесь...","bx":null,"by":null,"act":[]}],"use":[]},{"id":"screwdriver_ground","name":"Отвёртка на земле","t":"r","a":[340,670,390,720],"look":[{"if":"sdGround","who":"zet","text":"Подобрал отвертку. Пригодится в хозяйстве.","bx":null,"by":null,"act":[{"t":"give","item":"screwdriver"},{"t":"set","flag":"sdGround","val":"0"}]}],"use":[]}],"arrows":[{"id":"back","x":70,"y":700,"dir":-1,"to":"l3","px":1080,"if":"","showIf":"","act":[],"fail":[]},{"id":"forward","x":1085,"y":700,"dir":1,"to":"l5","px":150,"if":"false","showIf":"false","act":[],"fail":[{"if":"","who":"zet","text":"Куда я пойду? Мне еще нужно разобраться со светофором.","bx":null,"by":null,"act":[]}]}],"sprites":[{"id":"screwdriver_on_ground","item":"screwdriver","img":"","x":365,"y":695,"h":40,"scale":null,"anchor":"c","rot":0,"showIf":"sdGround","text":"","fontSize":38,"tw":320,"color":"#eedcb4cc"}]},{"id":"l5","name":"Магазины (светофор починен)","note":"","bg":"images/backs/back3n.jpg","mode":"static","music":"music/main_theme.mp3","ambient":"sounds/street.mp3","startPx":150,"playerY":700,"playerScale":1,"walkMin":70,"walkMax":1080,"limitIf":"","limitMin":null,"limitMax":null,"walkThroughPlayer":0,"preset":null,"bubbleX":null,"bubbleY":null,"onEnter":[],"zones":[{"id":"men","name":"Компания Анатолича","t":"r","a":[630,420,900,720],"look":[{"if":"","who":"drunks","text":"Спасибо Зет! Спас нас от «засухи»!","bx":null,"by":null,"act":[]}],"use":[{"item":"guitar","rules":[{"if":"","who":"zet","text":"Теперь около магазина они не отстанут от меня с гитарой. Лучше не буду.","bx":null,"by":null,"act":[]}]},{"item":"cigarette","rules":[{"if":"","who":"drunks","text":"О! Покурить угощают!","bx":null,"by":null,"act":[{"t":"say","who":"zet","text":"Нет уж, последнюю сигарету попридержу у себя."}]}]},{"item":"texts","rules":[{"if":"","who":"drunks","text":"Нет. Такое не читаем!","bx":null,"by":null,"act":[]}]},{"item":"key","rules":[{"if":"","who":"drunks","text":"А что он открывает? Сейф с деньгами?","bx":null,"by":null,"act":[]}]},{"item":"matches","rules":[{"if":"","who":"zet","text":"Не буду тратить последний источник огня.","bx":null,"by":null,"act":[]}]}]},{"id":"traffic_light","name":"","t":"r","a":[480,120,540,330],"look":[{"if":"","who":"zet","text":"Тем и хороши старые технологии - они ремонтопригодные","bx":null,"by":null,"act":[]}],"use":[]},{"id":"pole_base","name":"Щиток (можно забрать ключ)","t":"r","a":[405,580,450,700],"look":[{"if":"","who":"zet","text":"","bx":null,"by":null,"act":[{"t":"puzzle","puzzle":"pipes"}]}],"use":[]},{"id":"road","name":"","t":"r","a":[350,450,1100,650],"look":[{"if":"","who":"zet","text":"Теперь дорога пуста. Никто не хочет стоять на светофоре","bx":null,"by":null,"act":[]}],"use":[]},{"id":"shop","name":"","t":"r","a":[610,330,870,480],"look":[{"if":"","who":"zet","text":"Народный магазин для страждущих о вечернем досуге. И не только вечернем","bx":null,"by":null,"act":[]}],"use":[]},{"id":"lamp","name":"","t":"r","a":[840,50,940,350],"look":[{"if":"","who":"zet","text":"Ну хоть освещение нынче не подводит","bx":null,"by":null,"act":[]}],"use":[]},{"id":"houses","name":"","t":"r","a":[600,100,1100,300],"look":[{"if":"","who":"zet","text":"Всегда успокаивает свет в окне домов. Люди здесь...","bx":null,"by":null,"act":[]}],"use":[]}],"arrows":[{"id":"next","x":1085,"y":700,"dir":1,"to":"l6","px":100,"if":"","showIf":"","act":[],"fail":[]}],"sprites":[]},{"id":"l6","name":"Автобусная остановка","note":"Сигарета парню → медиатор → наушники → бабушка пишет кондукторше → автобус.","bg":"images/backs/back4.jpg","mode":"side","music":"music/theme2.mp3","ambient":"sounds/street.mp3","startPx":100,"playerY":750,"playerScale":1,"walkMin":70,"walkMax":1080,"limitIf":"","limitMin":null,"limitMax":null,"walkThroughPlayer":0,"preset":null,"bubbleX":null,"bubbleY":null,"onEnter":[{"if":"!l6seen","who":"zet","text":"Вот же напасть. А денег то у меня нет на проезд.","bx":null,"by":null,"act":[{"t":"set","flag":"l6seen","val":"1"}]}],"zones":[{"id":"man","name":"Дядя","t":"r","a":[345,275,470,640],"look":[{"if":"","who":"man","text":"Нет, молодой, у меня только на себя на проезд.","bx":null,"by":null,"act":[]}],"use":[{"item":"guitar","rules":[{"if":"","who":"man","text":"А Кукушку можешь сыграть? Нет? Жаль.","bx":null,"by":null,"act":[]}]},{"item":"cigarette","rules":[{"if":"","who":"man","text":"Не, не курю.","bx":null,"by":null,"act":[]}]},{"item":"texts","rules":[{"if":"","who":"man","text":"Извини, не люблю стихи.","bx":null,"by":null,"act":[]}]}]},{"id":"granny","name":"Бабушка","t":"r","a":[570,390,690,620],"look":[{"if":"hpFixed && !busReady","who":"granny","text":"Видела я, как ты помог пареньку: и сигаретой угостил, и наушники починил, просто так. Добрый ты, милок. Сейчас смс знакомой кондукторше напишу, она тебя довезёт.","bx":null,"by":null,"act":[{"t":"say","who":"zet","text":"Вовремя я дела закончил. А вот и автобус."},{"t":"set","flag":"busReady","val":"1"}]},{"if":"busReady","who":"granny","text":"Иди, милок, автобус скоро подъедет. Я знакомой кондукторше уже смс написала.","bx":null,"by":null,"act":[]},{"if":"","who":"granny","text":"Внучок, пенсия то маленькая нынче. А мне за хлебом на дальний район ехать. Никак не могу помочь.","bx":null,"by":null,"act":[]}],"use":[{"item":"guitar","rules":[{"if":"","who":"granny","text":"Эххх. А дед то молодой когда был, романсы мне пел. Не береди душу бабушке инструментом.","bx":null,"by":null,"act":[]}]},{"item":"cigarette","rules":[{"if":"","who":"granny","text":"Ты что, милок? Убери эту гадость от меня!","bx":null,"by":null,"act":[]}]},{"item":"texts","rules":[{"if":"","who":"granny","text":"Стихи - это хорошо. Дед мне писал когда-то их. Милая моя, радость дорогая... Эххх.","bx":null,"by":null,"act":[]}]}]},{"id":"guy","name":"Парень в наушниках","t":"r","a":[835,320,950,620],"look":[{"if":"!guySmoked","who":"zet","text":"Он в наушниках. Не слышит. Или делает вид что не слышит.","bx":650,"by":100,"act":[]},{"if":"!hpFixed","who":"guy","text":"Кто бы мне наушники починил, было бы так здорово. *затянулся сигаретой*","bx":null,"by":null,"act":[]},{"if":"","who":"guy","text":"Музыка снова со мной. Спасибо тебе!","bx":null,"by":null,"act":[]}],"use":[{"item":"guitar","rules":[{"if":"","who":"zet","text":"Зачем ему аналоговая музыка, у него своя, цифровая.","bx":650,"by":100,"act":[]}]},{"item":"cigarette","rules":[{"if":"!guySmoked","who":"guy","text":"Спасибо за сигарету! День сегодня не ахти. Денег нет даже на пачку сигарет. Ещё и наушники сломались.","bx":null,"by":null,"act":[{"t":"take","item":"cigarette"},{"t":"set","flag":"guySmoked","val":"1"}]}]},{"item":"texts","rules":[{"if":"!guySmoked","who":"zet","text":"Он в наушниках. Не слышит. Или делает вид что не слышит.","bx":650,"by":100,"act":[]},{"if":"","who":"guy","text":"Неплохие стихи, кстати.","bx":null,"by":null,"act":[]}]},{"item":"mediator","rules":[{"if":"!guySmoked","who":"zet","text":"Он в наушниках. Не слышит. Или делает вид что не слышит.","bx":650,"by":100,"act":[]},{"if":"!hpFixed","who":"guy","text":"У тебя что, есть инструмент для ремонта?","bx":null,"by":null,"act":[{"t":"puzzle","puzzle":"headphones"}]},{"if":"","who":"guy","text":"Спасибо, дальше они уже работают.","bx":null,"by":null,"act":[]}]}]},{"id":"bin_stop","name":"Урна","t":"r","a":[180,455,285,640],"look":[{"if":"!found(brokenmediator)","who":"zet","text":"Что-то зачастил я с заглядыванием в мусорки. Ну ладно, это в последний раз.","bx":130,"by":100,"act":[{"t":"give","item":"brokenmediator"}]},{"if":"","who":"zet","text":"Больше там ничего интересного. Только мусор.","bx":130,"by":100,"act":[]}],"use":[]},{"id":"sign","name":"","t":"r","a":[1010,20,1110,200],"look":[{"if":"","who":"zet","text":"Знак остановка. Обычно обозначает то, что здесь останавливается общественный транспорт.","bx":null,"by":null,"act":[]}],"use":[]},{"id":"sign_pole","name":"","t":"r","a":[1055,200,1095,610],"look":[{"if":"","who":"zet","text":"Знак остановка. Обычно обозначает то, что здесь останавливается общественный транспорт.","bx":null,"by":null,"act":[]}],"use":[]},{"id":"houses","name":"","t":"r","a":[265,20,1000,140],"look":[{"if":"","who":"zet","text":"Эхх. Хорошо им, никуда идти не надо.","bx":null,"by":null,"act":[]}],"use":[]},{"id":"ads","name":"","t":"r","a":[285,255,830,420],"look":[{"if":"","who":"zet","text":"Объявления: куплю, продам, ищу работу. Люди ищут выход как могут.","bx":null,"by":null,"act":[]}],"use":[]}],"arrows":[{"id":"back","x":70,"y":700,"dir":-1,"to":"l5","px":1080,"if":"","showIf":"","act":[],"fail":[]},{"id":"bus","x":1085,"y":700,"dir":1,"to":"l7","px":450,"if":"busReady","showIf":"busReady","act":[],"fail":[]}],"sprites":[]},{"id":"l7","name":"Автобус","note":"Сыграть (гитара в проходе) → медиатор+гитара → аккорды → концерт → собрать 25 ₽ → заплатить → сесть.","bg":"images/backs/back5.jpg","mode":"side","music":"music/theme2.mp3","ambient":"sounds/autobus.mp3","startPx":450,"playerY":760,"playerScale":1.6,"walkMin":70,"walkMax":1080,"limitIf":"","limitMin":null,"limitMax":null,"walkThroughPlayer":120,"preset":null,"bubbleX":null,"bubbleY":null,"onEnter":[{"if":"!l7Started","who":"conductor","text":"Так, граждане пассажиры. Оплачиваем проезд. С вас 25 рублей.","bx":null,"by":null,"act":[{"t":"set","flag":"l7Started","val":"1"}]},{"if":"!busPaid","who":"conductor","text":"Оплачиваем проезд. С вас 25 рублей.","bx":null,"by":null,"act":[]}],"zones":[{"id":"conductor","name":"Кондуктор","t":"r","a":[800,210,935,720],"look":[{"if":"busPaid","who":"conductor","text":"Проезд оплачен, езжайте спокойно.","bx":null,"by":null,"act":[]},{"if":"conductorClicks == 0","who":"conductor","text":"Какая договорённость? Какая старушка с остановки? Никто мне ничего не говорил!","bx":null,"by":null,"act":[{"t":"inc","flag":"conductorClicks","val":"1"}]},{"if":"","who":"conductor","text":"Молодой человек! Оплачиваем проезд — 25 рублей — или на следующей остановке вас встретит милиция!","bx":null,"by":null,"act":[{"t":"inc","flag":"conductorClicks","val":"1"},{"t":"say","who":"zet","text":"Нехорошая ситуация! Надо что-то придумывать и срочно..."}]}],"use":[{"item":"rub5","rules":[{"if":"busPaid","who":"conductor","text":"Проезд уже оплачен.","bx":null,"by":null,"act":[]},{"if":"rub \u003c 25 && concertDone","who":"conductor","text":"Ты хорошо сыграл. Но проезд всё равно стоит 25 рублей.","bx":null,"by":null,"act":[]},{"if":"rub \u003c 25","who":"conductor","text":"Этого мало! Проезд стоит 25 рублей!","bx":null,"by":null,"act":[]},{"if":"","who":"conductor","text":"Ну вот! Заплатил за проезд и живи спокойно!","bx":null,"by":null,"act":[{"t":"inc","flag":"rub","val":"-25"},{"t":"take","item":"rub5"},{"t":"set","flag":"busPaid","val":"1"},{"t":"set","flag":"needSeat","val":"1"},{"t":"say","who":"zet","text":"Ох. Присесть бы."}]}]},{"item":"guitar","rules":[{"if":"","who":"conductor","text":"Ты ещё и гитару украл где-то?","bx":null,"by":null,"act":[]}]},{"item":"matches","rules":[{"if":"","who":"conductor","text":"Хулиганство решил задумать?!","bx":null,"by":null,"act":[]}]},{"item":"texts","rules":[{"if":"","who":"conductor","text":"Это не похоже на деньги? Фальшивомонетчик чтоль?","bx":null,"by":null,"act":[]}]}]},{"id":"man","name":"Мужчина с телефоном","t":"r","a":[20,280,240,650],"look":[{"if":"concertDone && !gave_man","who":"busMan","text":"Даже я отвлёкся от переписки. Держи пятёрку.","bx":null,"by":null,"act":[{"t":"set","flag":"gave_man","val":"1"},{"t":"inc","flag":"rub","val":"5"},{"t":"give","item":"rub5"}]},{"if":"concertDone","who":"busMan","text":"Классная песня. Заслушался, даже переписку бросил.","bx":null,"by":null,"act":[]},{"if":"","who":"narr","text":"Самозабвенно переписывается в национальном месенджере.","bx":50,"by":100,"act":[]}],"use":[]},{"id":"womanRed","name":"Женщина в красном","t":"r","a":[285,300,480,620],"look":[{"if":"concertDone && !gave_womanRed","who":"womanRed","text":"Аж на душе теплее стало. Держи, милок.","bx":null,"by":null,"act":[{"t":"set","flag":"gave_womanRed","val":"1"},{"t":"inc","flag":"rub","val":"5"},{"t":"give","item":"rub5"}]},{"if":"concertDone","who":"womanRed","text":"Спасибо за музыку, милок. Такой вечер скрасил.","bx":null,"by":null,"act":[]},{"if":"","who":"womanRed","text":"Как ты так умудрился в автобус и без денег сесть?","bx":null,"by":null,"act":[]}],"use":[]},{"id":"oldMan","name":"Дед","t":"r","a":[500,320,700,620],"look":[{"if":"concertDone && !gave_oldMan","who":"oldMan","text":"Вот это по-нашему! Держи, молодёжь.","bx":null,"by":null,"act":[{"t":"set","flag":"gave_oldMan","val":"1"},{"t":"inc","flag":"rub","val":"5"},{"t":"give","item":"rub5"}]},{"if":"concertDone","who":"oldMan","text":"Хорошо играешь, парень. Не зря учился.","bx":null,"by":null,"act":[]},{"if":"","who":"oldMan","text":"До чего молодёжь нынче пошла. Я в вашем возрасте работал не покладая рук и деньги водились.","bx":null,"by":null,"act":[]}],"use":[]},{"id":"sleepingAunt","name":"Спящая тётка","t":"r","a":[935,300,1075,625],"look":[{"if":"concertDone && !gave_sleepingAunt","who":"aunt","text":"Я не спала. Очень красиво. Вот, возьми.","bx":null,"by":null,"act":[{"t":"set","flag":"gave_sleepingAunt","val":"1"},{"t":"inc","flag":"rub","val":"5"},{"t":"give","item":"rub5"}]},{"if":"concertDone","who":"aunt","text":"Давно так не слушала. Спасибо тебе, играй ещё.","bx":null,"by":null,"act":[]},{"if":"","who":"narr","text":"Человек мирно дремлет на заднем сиденье. Ни к чему будить...","bx":830,"by":100,"act":[]}],"use":[]},{"id":"signRides","name":"","t":"r","a":[50,15,340,125],"look":[{"if":"","who":"zet","text":"Действительно. Сидячих мест стало больше. Или людей стало меньше.","bx":null,"by":null,"act":[]}],"use":[]},{"id":"signBread","name":"","t":"r","a":[400,45,600,170],"look":[{"if":"","who":"zet","text":"Сейчас такой хлеб, что даже свежий на вкус как позавчерашний.","bx":null,"by":null,"act":[]}],"use":[]},{"id":"signApteka","name":"","t":"r","a":[600,80,800,200],"look":[{"if":"","who":"zet","text":"Хорошо что мне не нужно посещать данное заведение... Пока...","bx":null,"by":null,"act":[]}],"use":[]},{"id":"signRoute","name":"","t":"r","a":[950,185,1060,312],"look":[{"if":"","who":"zet","text":"Ну а как же без улицы Ленина в провинциальном городе?","bx":null,"by":null,"act":[]}],"use":[]},{"id":"lamp","name":"","t":"r","a":[800,10,930,90],"look":[{"if":"","who":"zet","text":"Тусклый жёлтый свет создаёт дополнительную атмосферу поездке","bx":null,"by":null,"act":[]}],"use":[]},{"id":"handrail","name":"","t":"r","a":[735,180,800,720],"look":[{"if":"","who":"zet","text":"Спасительное средство чтобы не упасть в автобусе. Судя по чистоте, мылся последний раз примерно никогда","bx":null,"by":null,"act":[]}],"use":[]},{"id":"window","name":"","t":"r","a":[80,170,400,360],"look":[{"if":"","who":"zet","text":"Люблю вечерний город, сел бы и смотрел пока еду, но надо решать вопрос с оплатой за проезд","bx":null,"by":null,"act":[]}],"use":[]},{"id":"window2","name":"","t":"r","a":[430,150,740,300],"look":[{"if":"","who":"zet","text":"Люблю вечерний город, сел бы и смотрел пока еду, но надо решать вопрос с оплатой за проезд","bx":null,"by":null,"act":[]}],"use":[]},{"id":"seatA","name":"Сиденье","t":"r","a":[150,535,300,625],"look":[{"if":"needSeat","who":"zet","text":"Ох. Присесть бы.","bx":null,"by":null,"act":[{"t":"set","flag":"needSeat","val":"0"},{"t":"goto","scene":"back6mid","px":null}]},{"if":"!seatMoney","who":"zet","text":"Повезло. Кто-то обронил пятак.","bx":null,"by":null,"act":[{"t":"set","flag":"seatMoney","val":"1"},{"t":"inc","flag":"rub","val":"5"},{"t":"give","item":"rub5"}]},{"if":"","who":"zet","text":"Больше под сиденьем ничего нет.","bx":null,"by":null,"act":[]}],"use":[]},{"id":"seatB","name":"Сиденье","t":"r","a":[478,520,528,615],"look":[{"if":"needSeat","who":"zet","text":"Ох. Присесть бы.","bx":null,"by":null,"act":[{"t":"set","flag":"needSeat","val":"0"},{"t":"goto","scene":"back6mid","px":null}]},{"if":"!seatMoney","who":"zet","text":"Повезло. Кто-то обронил пятак.","bx":null,"by":null,"act":[{"t":"set","flag":"seatMoney","val":"1"},{"t":"inc","flag":"rub","val":"5"},{"t":"give","item":"rub5"}]},{"if":"","who":"zet","text":"Больше под сиденьем ничего нет.","bx":null,"by":null,"act":[]}],"use":[]},{"id":"seatC","name":"Сиденье","t":"r","a":[712,520,830,620],"look":[{"if":"needSeat","who":"zet","text":"Ох. Присесть бы.","bx":null,"by":null,"act":[{"t":"set","flag":"needSeat","val":"0"},{"t":"goto","scene":"back6mid","px":null}]},{"if":"!seatMoney","who":"zet","text":"Повезло. Кто-то обронил пятак.","bx":null,"by":null,"act":[{"t":"set","flag":"seatMoney","val":"1"},{"t":"inc","flag":"rub","val":"5"},{"t":"give","item":"rub5"}]},{"if":"","who":"zet","text":"Больше под сиденьем ничего нет.","bx":null,"by":null,"act":[]}],"use":[]},{"id":"aisle","name":"Проход — сыграть на гитаре где угодно","t":"r","a":[0,200,1152,745],"look":[],"use":[{"item":"guitar","rules":[{"if":"!tsoyComplete","who":"oldMan","text":"Что ты там брякаешь? Из-за автобуса ничего не слышно!","bx":null,"by":null,"act":[{"t":"sound","src":"music/tsoy.mp3","wait":"1","caption":"Зет играет..."},{"t":"set","flag":"tsoyComplete","val":"1"}]},{"if":"","who":"oldMan","text":"Плохо слышишь чтоль? Не слышно гитару, говорю!","bx":null,"by":null,"act":[{"t":"sound","src":"music/tsoy.mp3","wait":"1","caption":"Зет играет..."}]}]}]}],"arrows":[],"sprites":[]},{"id":"back6mid","name":"Остановка (от первого лица)","note":"","bg":"images/backs/back6mid.jpg","mode":"first","music":"music/theme2.mp3","ambient":"sounds/street.mp3","startPx":150,"playerY":700,"playerScale":1,"walkMin":70,"walkMax":1080,"limitIf":"","limitMin":null,"limitMax":null,"walkThroughPlayer":0,"preset":null,"bubbleX":20,"bubbleY":100,"onEnter":[],"zones":[{"id":"shelter","name":"","t":"r","a":[441,344,910,681],"look":[{"if":"","who":"zet","text":"Остановка. Пусто.","bx":null,"by":null,"act":[]}],"use":[]},{"id":"trash","name":"","t":"r","a":[341,535,441,655],"look":[{"if":"","who":"zet","text":"Стоп-стоп-стоп. Мы договаривались, что больше не шарим по мусоркам","bx":null,"by":null,"act":[]}],"use":[]},{"id":"sign","name":"","t":"r","a":[945,252,1055,399],"look":[{"if":"","who":"zet","text":"Дорожный знак означает что здесь остановка автобусов","bx":null,"by":null,"act":[]}],"use":[]},{"id":"balkon1","name":"","t":"r","a":[337,32,483,211],"look":[{"if":"playmar","who":"molodej1","text":"Крут, дядя, крут!","bx":null,"by":null,"act":[]},{"if":"","who":"molodej1","text":"Чего вылупился, дядя. Иди куда шёл","bx":null,"by":null,"act":[{"t":"say","who":"zet","text":"Хамоватая молодёжь - бич нашего времени"}]}],"use":[{"item":"guitar","rules":[{"if":"!playmar","who":"zet","text":"","bx":null,"by":null,"act":[{"t":"say","who":"molodej1","text":"Что, дядь, сыграть решил?"},{"t":"sound","src":"music/pm.mp3","wait":"1","caption":"Зет играет"},{"t":"sound","src":"sounds/applause.mp3"},{"t":"set","flag":"playmar"},{"t":"say","who":"molodej1","text":"Отлично играешь, дядя! Вот тебе на чай... Чай, хехехе"},{"t":"give","item":"pack"},{"t":"say","who":"zet","text":"Ох, надеюсь это что-то не криминальное... Спасибо ребят!"}]}]}]}],"arrows":[{"id":"to_garages","x":70,"y":700,"dir":-1,"to":"back6left","px":null,"if":"","showIf":"","act":[],"fail":[]},{"id":"to_shops","x":1085,"y":700,"dir":1,"to":"back6right","px":null,"if":"","showIf":"","act":[],"fail":[]}],"sprites":[]},{"id":"back6left","name":"Гаражи","note":"","bg":"images/backs/back6left.jpg","mode":"first","music":"music/theme2.mp3","ambient":"sounds/backyard-evening.mp3","startPx":150,"playerY":700,"playerScale":1,"walkMin":70,"walkMax":1080,"limitIf":"","limitMin":null,"limitMax":null,"walkThroughPlayer":0,"preset":{"inv":["guitar"],"found":[],"flags":{}},"bubbleX":20,"bubbleY":100,"onEnter":[],"zones":[{"id":"dog","name":"Злая собака","t":"r","a":[620,534,920,724],"look":[{"if":"!dogeat","who":"zet","text":"Злая собака нам не товарищ, дальше не пропустит","bx":null,"by":null,"act":[{"t":"sound","src":"sounds/dogbark.mp3"},{"t":"set","flag":"angrydog"}]},{"if":"dogeat и !key2found","who":"zet","text":"","bx":null,"by":null,"act":[{"t":"sound","src":"sounds/dogrig.mp3"},{"t":"say","who":"zet","text":"Собака с костью, но ещё не пускает. Пойду пока отсюда"}]},{"if":"key2found","who":"zet","text":"","bx":null,"by":null,"act":[{"t":"sound","src":"sounds/dogbreathe.mp3"},{"t":"say","who":"zet","text":"Нагрызлась кость и успокоилась"}]}],"use":[{"item":"*","rules":[{"if":"","who":"zet","text":"Злая собака нам не товарищ, дальше не пропустит","bx":null,"by":null,"act":[{"t":"sound","src":"sounds/dogbark.mp3"}]}]},{"item":"bone","rules":[{"if":"","who":"zet","text":"Держи собачка, не сердись","bx":null,"by":null,"act":[{"t":"take","item":"bone"},{"t":"set","flag":"dogeat"},{"t":"sound","src":"sounds/dogrig.mp3"},{"t":"set","flag":"key2found","val":"0"}]}]}]},{"id":"garage1","name":"","t":"r","a":[180,350,345,536],"look":[{"if":"","who":"zet","text":"Закрытые гаражи. Даже отсюда чувствуется запах моторного масла и выхлопных газов","bx":null,"by":null,"act":[]}],"use":[]},{"id":"garage2","name":"","t":"r","a":[381,368,518,533],"look":[{"if":"","who":"zet","text":"Ржавая дверь гаража, замок навесной.","bx":null,"by":null,"act":[]}],"use":[]},{"id":"car","name":"","t":"r","a":[689,400,869,530],"look":[{"if":"key2found","who":"bandit1","text":"Я главный здесь на районе. И ты не пройдёшь.","bx":null,"by":null,"act":[{"t":"say","who":"zet","text":"Что вообще никак?"},{"t":"say","who":"bandit1","text":"Плохое у меня настроение. Пивка бы..."},{"t":"say","who":"zet","text":"Мало у меня денег, не хватает..."},{"t":"say","who":"bandit1","text":"Сколько?"}]},{"if":"!key2found","who":"zet","text":"Старая машина. Человек за рулём мне машет","bx":null,"by":null,"act":[]},{"if":"nobandit","who":"zet","text":"Машина пуста. Пусть свободен","bx":null,"by":null,"act":[]}],"use":[{"item":"2coins","rules":[{"if":"key2found","who":"zet","text":"Вот столько...","bx":null,"by":null,"act":[{"t":"say","who":"bandit1","text":"Ндааа, не густо. На. Если убежишь с моими деньгами. Найду и здоровья лишу, ясно?"},{"t":"take","item":"2coins"},{"t":"give","item":"6coins"},{"t":"say","who":"zet","text":"Да не-не. Я не такой."}]}]},{"item":"beer","rules":[{"if":"key2found","who":"zet","text":"Я ему пиво дам. Пока он его выпьет. Потом скажет всё равно не пущу.","bx":null,"by":null,"act":[{"t":"say","who":"zet","text":"Не. Надо его как-то убрать отсюда"}]}]},{"item":"shakebeer","rules":[{"if":"","who":"zet","text":"Держи, всё по честному...","bx":null,"by":null,"act":[{"t":"say","who":"bandit1","text":"Оооо, ништяк, молодой. Ща пажжи, пивка тяпну"},{"t":"take","item":"shakebeer"},{"t":"sound","src":"sounds/otkrivalka.mp3"},{"t":"say","who":"bandit1","text":"Ляяяяя! Пена всю машину залила! Аааааа!"},{"t":"say","who":"zet","text":"Как резво он убежал..."},{"t":"set","flag":"rockclub"},{"t":"set","flag":"nobandit"}]}]}]},{"id":"lamp","name":"","t":"r","a":[984,146,1054,596],"look":[{"if":"","who":"zet","text":"Фонарь светит, но толку от него немного.","bx":null,"by":null,"act":[]}],"use":[]},{"id":"plakat","name":"","t":"r","a":[620,397,649,455],"look":[{"if":"","who":"zet","text":"Плакат: Рок-клуб «За гаражами» - далее 50м.","bx":null,"by":null,"act":[]}],"use":[]},{"id":"svalka","name":"","t":"r","a":[50,443,258,594],"look":[{"if":"","who":"zet","text":"Поставить мусорные контейнеры рядом с дверьми гаража, очень странное решение.","bx":null,"by":null,"act":[]}],"use":[]},{"id":"vdali","name":"","t":"r","a":[876,401,978,529],"look":[{"if":"","who":"zet","text":"Где-то там вдали слышится музыка","bx":null,"by":null,"act":[]}],"use":[]}],"arrows":[{"id":"back","x":1085,"y":700,"dir":1,"to":"back6mid","px":null,"if":"","showIf":"","act":[],"fail":[]},{"id":"arrow1","x":933,"y":459,"dir":1,"to":"back7front","px":150,"if":"","showIf":"rockclub","act":[],"fail":[]}],"sprites":[{"id":"dog_img","item":"","img":"images/character/dog_angry.png","x":790,"y":630,"h":140,"scale":null,"anchor":"c","rot":0,"showIf":"!dogeat","text":"","fontSize":38,"tw":320,"color":"#eedcb4cc"},{"id":"sprite1","item":"","img":"images/character/dog_norm.png","x":787,"y":623,"h":70,"scale":0.45,"anchor":"c","rot":0,"showIf":"dogeat и !key2found","text":"","fontSize":38,"tw":320,"color":"#eedcb4cc"},{"id":"sprite2","item":"","img":"images/character/dog_good.png","x":778,"y":631,"h":70,"scale":0.5,"anchor":"c","rot":0,"showIf":"key2found","text":"","fontSize":38,"tw":320,"color":"#eedcb4cc"}]},{"id":"back6right","name":"Магазины (от первого лица)","note":"","bg":"images/backs/back6right.jpg","mode":"first","music":"music/theme2.mp3","ambient":"sounds/street.mp3","startPx":150,"playerY":700,"playerScale":1,"walkMin":70,"walkMax":1080,"limitIf":"","limitMin":null,"limitMax":null,"walkThroughPlayer":0,"preset":null,"bubbleX":20,"bubbleY":100,"onEnter":[{"if":"","who":"zet","text":"","bx":null,"by":null,"act":[{"t":"set","flag":"visair"}]}],"zones":[{"id":"produkty","name":"","t":"r","a":[20,300,213,587],"look":[{"if":"","who":"zet","text":"«Продукты». Витрина светится, но внутри пусто.","bx":null,"by":null,"act":[]}],"use":[{"item":"1coin","rules":[{"if":"","who":"zet","text":"За столько денег я могу купить ровным счётом ничего","bx":null,"by":null,"act":[]}]},{"item":"2coins","rules":[{"if":"","who":"zet","text":"За две монеты я могу купить спички. А зачем они мне? Оп! А там кости за 6 монет продают...","bx":null,"by":null,"act":[]}]},{"item":"6coins","rules":[{"if":"","who":"zet","text":"Можно мне вон ту красивую косточку?","bx":null,"by":null,"act":[{"t":"take","item":"6coins"},{"t":"give","item":"bone"},{"t":"set","flag":"buybone"}]}]}]},{"id":"pivo","name":"","t":"r","a":[216,300,411,588],"look":[{"if":"","who":"zet","text":"«Пиво». Вестимо популярное место в этом районе.","bx":null,"by":null,"act":[]}],"use":[{"item":"1coin","rules":[{"if":"","who":"zet","text":"За монету мне даже стакан понюхать из под пива не дадут","bx":null,"by":null,"act":[]}]},{"item":"2coins","rules":[{"if":"","who":"zet","text":"За две монеты таки стакан понюхать дадут, но мне не надо этого","bx":null,"by":null,"act":[]}]},{"item":"6coins","rules":[{"if":"!buybone","who":"zet","text":"Бутылку пива я могу теперь купить, но зачем?","bx":null,"by":null,"act":[]},{"if":"buybone","who":"zet","text":"Можно мне вон то пиво из холодильника?","bx":null,"by":null,"act":[{"t":"take","item":"6coins"},{"t":"give","item":"beer"},{"t":"say","who":"zet","text":"Лечебный утренний напиток у нас"}]}]}]},{"id":"svyaz","name":"","t":"r","a":[415,300,564,591],"look":[{"if":"","who":"zet","text":"«Связь». Сим-карты, телефоны, ремонт.","bx":null,"by":null,"act":[]}],"use":[{"item":"1coin","rules":[{"if":"","who":"zet","text":"За монету могу... Не придумал шутку...","bx":null,"by":null,"act":[]}]},{"item":"2coins","rules":[{"if":"","who":"zet","text":"Могу положить монеты на подоконник, для нуждающихся... Но нуждающийся я.","bx":null,"by":null,"act":[]}]},{"item":"6coins","rules":[{"if":"","who":"zet","text":"Могу купить сим-карту, но зачем мне она?","bx":null,"by":null,"act":[]}]}]},{"id":"bulochka","name":"","t":"r","a":[570,298,768,587],"look":[{"if":"","who":"zet","text":"«Булочная». Отсюда всегда пахнет свежим хлебом.","bx":null,"by":null,"act":[]}],"use":[{"item":"1coin","rules":[{"if":"","who":"zet","text":"За монету и крошки хлеба не дадут","bx":null,"by":null,"act":[]}]},{"item":"2coins","rules":[{"if":"","who":"zet","text":"Крошку хлеба таки дадут, но мне мало чтобы покушать","bx":null,"by":null,"act":[]}]},{"item":"6coins","rules":[{"if":"","who":"zet","text":"Могу купить батон, но зачем мне он?","bx":null,"by":null,"act":[]}]}]},{"id":"lamp","name":"","t":"r","a":[1014,165,1114,615],"look":[{"if":"","who":"zet","text":"Уличный фонарь.","bx":null,"by":null,"act":[]}],"use":[]},{"id":"balkon2","name":"","t":"r","a":[315,84,474,225],"look":[{"if":"take2coin","who":"molodej1","text":"Извиняй, дядь. Больше нет!","bx":null,"by":null,"act":[]},{"if":"takecoin","who":"molodej1","text":"Кажется дядя благодарен...","bx":null,"by":null,"act":[]},{"if":"","who":"molodej1","text":"Смотри там дядя идёт с гитарой. Музыкант наверное. Эй, дядя, лови!","bx":null,"by":null,"act":[{"t":"give","item":"1coin"},{"t":"say","who":"zet","text":"Щедрая молодёжь редкость в наше время, но, как видим - есть в наличии"},{"t":"say","who":"zet","text":"Спасибо, ребята!"},{"t":"set","flag":"takecoin"}]}],"use":[{"item":"1coin","rules":[{"if":"","who":"molodej1","text":"Что, дядь? Мало? Ну держи. Больше нет!","bx":null,"by":null,"act":[{"t":"take","item":"1coin"},{"t":"give","item":"2coins"},{"t":"say","who":"zet","text":"Спасибо, ребята! Огромное!"},{"t":"set","flag":"take2coin"}]}]},{"item":"2coins","rules":[{"if":"","who":"molodej1","text":"Ну нету у нас больше, дядь...","bx":null,"by":null,"act":[]}]},{"item":"matches","rules":[{"if":"","who":"molodej1","text":"Ого! У него есть спички! Крутой!","bx":null,"by":null,"act":[]}]},{"item":"guitar","rules":[{"if":"","who":"molodej1","text":"Да, да. Хорошая гитара!","bx":null,"by":null,"act":[]}]},{"item":"6coins","rules":[{"if":"","who":"zet","text":"","bx":null,"by":null,"act":[{"t":"sound","src":"sounds/applause.mp3"},{"t":"say","who":"molodej1","text":"Смотри, он наши деньги уже умножил! Красава!"}]}]}]},{"id":"airman","name":"","t":"r","a":[818,354,931,635],"look":[{"if":"","who":"zet","text":"Стоит, трясётся! Удивительно что булочную рекламирует.","bx":null,"by":null,"act":[]}],"use":[{"item":"guitar","rules":[{"if":"","who":"zet","text":"Не, растрясёт ещё гитару и она строй потеряет.","bx":null,"by":null,"act":[]}]},{"item":"mediator","rules":[{"if":"","who":"zet","text":"Разрезать надувного человечка? Плохая затея...","bx":null,"by":null,"act":[]}]},{"item":"matches","rules":[{"if":"","who":"zet","text":"Поджигать рекламного человечка как-то неправильно","bx":null,"by":null,"act":[]}]},{"item":"1coin","rules":[{"if":"","who":"zet","text":"Зачем ему деньги, ему и так весело","bx":null,"by":null,"act":[]}]},{"item":"2coins","rules":[{"if":"","who":"zet","text":"Зачем ему деньги, ему  так весело","bx":null,"by":null,"act":[]}]},{"item":"6coins","rules":[{"if":"","who":"zet","text":"Пожалуй стоит потратить эти деньги на что-то более ценное","bx":null,"by":null,"act":[]}]},{"item":"beer","rules":[{"if":"","who":"zet","text":"Сейчас пиво мы растрясём...","bx":null,"by":null,"act":[{"t":"take","item":"beer"},{"t":"give","item":"shakebeer"}]}]}]},{"id":"key2","name":"","t":"r","a":[287,558,345,617],"look":[{"if":"dogeat","who":"zet","text":"Ключ кто-то обронил","bx":null,"by":null,"act":[{"t":"give","item":"key2"},{"t":"set","flag":"key2found"},{"t":"set","flag":"dogsleep"}]}],"use":[]}],"arrows":[{"id":"back","x":66,"y":715,"dir":-1,"to":"back6mid","px":null,"if":"","showIf":"","act":[],"fail":[]}],"sprites":[{"id":"airman","item":"","img":"images/character/airman.png","x":856,"y":486,"h":70,"scale":0.2,"anchor":"c","rot":0,"showIf":"","text":"","fontSize":38,"tw":320,"color":"#eedcb4cc"},{"id":"sprite1","item":"key2","img":"","x":316,"y":588,"h":70,"scale":0.3,"anchor":"c","rot":0,"showIf":"!key2found и dogeat","text":"","fontSize":38,"tw":320,"color":"#eedcb4cc"}]},{"id":"back7front","name":"Перед клубом","note":"","bg":"images/backs/back7front.jpg","mode":"first","music":"music/theme3.mp3","ambient":"sounds/backyard-evening.mp3","startPx":150,"playerY":700,"playerScale":1,"walkMin":70,"walkMax":1080,"limitIf":"","limitMin":null,"limitMax":null,"walkThroughPlayer":0,"preset":null,"bubbleX":null,"bubbleY":null,"onEnter":[],"zones":[{"id":"car","name":"","t":"r","a":[150,354,482,652],"look":[{"if":"","who":"zet","text":"Чья-то старая машина...","bx":null,"by":null,"act":[]}],"use":[]},{"id":"poster1","name":"","t":"r","a":[518,297,593,391],"look":[{"if":"","who":"zet","text":"Интересное заявление, проверять его я не буду","bx":null,"by":null,"act":[]}],"use":[]},{"id":"poster2","name":"","t":"r","a":[544,394,604,478],"look":[{"if":"","who":"zet","text":"Хммм...","bx":null,"by":null,"act":[]}],"use":[]},{"id":"poster3","name":"","t":"r","a":[824,297,907,419],"look":[{"if":"","who":"zet","text":"Судя по виду плаката, он тут висит не один год","bx":null,"by":null,"act":[]}],"use":[]},{"id":"poster4","name":"","t":"r","a":[965,351,1109,457],"look":[{"if":"","who":"zet","text":"Надпись \"Здесь живёт косой!\" и стрелка вверх","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone1","name":"","t":"r","a":[1018,82,1113,312],"look":[{"if":"","who":"zet","text":"Вестимо окна квартиры некоего \"косого\"","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone2","name":"","t":"r","a":[87,272,128,358],"look":[{"if":"","who":"zet","text":"Плакат \"Шум после 23.00 запрещён\"","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone3","name":"","t":"r","a":[86,371,134,448],"look":[{"if":"","who":"zet","text":"Надпись \"Вождь был здесь\".","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone4","name":"","t":"r","a":[586,165,882,277],"look":[{"if":"","who":"zet","text":"Непосредственная вывеска сообщающая что здесь находится","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone5","name":"","t":"r","a":[464,97,573,264],"look":[{"if":"","who":"zet","text":"Вентиляция. Весь клуб находится под землёй чтобы не мешать музыкой ближайшим домам.","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone6","name":"","t":"r","a":[875,487,950,568],"look":[{"if":"","who":"zet","text":"Ящик из под пива наполненный бутылками","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone7","name":"","t":"r","a":[788,432,865,561],"look":[{"if":"","who":"zet","text":"Мусорка заполнена бутылками, пластиковыми стаканчиками и бычками сигарет","bx":null,"by":null,"act":[{"t":"say","who":"zet","text":"При этом мусора вообще нет на дорожке, приличные люди, получается"},{"t":"say","who":"zet","text":"Или кто-то хорошо прибирается..."}]}],"use":[]},{"id":"zone8","name":"","t":"r","a":[775,345,799,380],"look":[{"if":"!testdoor","who":"zet","text":"А зачем мне звонить?","bx":null,"by":null,"act":[]},{"if":"testdoor","who":"zet","text":"","bx":null,"by":null,"act":[{"t":"say","who":"zet","text":"Сейчас позвоним"},{"t":"sound","src":"sounds/domofon.mp3","wait":"1"},{"t":"say","who":"nonamer","text":"Занято нахрен!"},{"t":"say","who":"zet","text":"Так не пройти"},{"t":"set","flag":"pozvonil"}]}],"use":[]},{"id":"zone9","name":"","t":"r","a":[644,279,767,508],"look":[{"if":"!dooropen","who":"zet","text":"Дверь заперта. Видимо надо позвонить.","bx":null,"by":null,"act":[{"t":"set","flag":"testdoor"}]},{"if":"dooropen","who":"zet","text":"Дверь открыта","bx":null,"by":null,"act":[]}],"use":[{"item":"key2","rules":[{"if":"!pozvonil","who":"zet","text":"Не, ну случайно найденный ключ толкать в замок, не сильно хорошая идея. надо позвонить сначала","bx":null,"by":null,"act":[]},{"if":"pozvonil","who":"zet","text":"Ну что-же. Попробуем ключ.","bx":null,"by":null,"act":[{"t":"puzzle","puzzle":"keymaster"}]}]}]}],"arrows":[{"id":"prohodrock","x":721,"y":391,"dir":1,"to":"back7prod","px":150,"if":"","showIf":"dooropen","act":[],"fail":[]}],"sprites":[]},{"id":"back7prod","name":"Продюсер","note":"","bg":"images/backs/back7prod.jpg","mode":"first","music":"music/theme3.mp3","ambient":"sounds/cabinet.mp3","startPx":150,"playerY":700,"playerScale":1,"walkMin":70,"walkMax":1080,"limitIf":"","limitMin":null,"limitMax":null,"walkThroughPlayer":0,"preset":null,"bubbleX":null,"bubbleY":null,"onEnter":[],"zones":[{"id":"zone1","name":"","t":"r","a":[876,88,1001,291],"look":[{"if":"","who":"zet","text":"Реклама какого-то радио...","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone2","name":"","t":"r","a":[602,142,653,198],"look":[{"if":"","who":"zet","text":"Буква А в кружке. Видимо важная буква...","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone3","name":"","t":"r","a":[531,32,595,94],"look":[{"if":"","who":"zet","text":"Череп на шкафу из детского журнала \"Человеческое тело\"","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone4","name":"","t":"r","a":[435,55,522,107],"look":[{"if":"","who":"zet","text":"Настолки \"Манчкин\"","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone5","name":"","t":"r","a":[586,201,659,287],"look":[{"if":"","who":"zet","text":"Судя по лицам это группа Depeche Mode или A-Ha","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone6","name":"","t":"r","a":[795,111,853,177],"look":[{"if":"","who":"zet","text":"Фото Беллатрисы Лейнстрендж","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone7","name":"","t":"r","a":[422,111,563,162],"look":[{"if":"","who":"zet","text":"Полка с VHS кассетами с клипами 90-х","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone8","name":"","t":"r","a":[424,169,564,235],"look":[{"if":"","who":"zet","text":"Полка с VHS кассетами \"Порно\"","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone9","name":"","t":"r","a":[422,242,564,310],"look":[{"if":"","who":"zet","text":"Четыре учебника по Microsoft Office и учебные видео по ним на VHS","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone10","name":"","t":"r","a":[428,320,564,388],"look":[{"if":"","who":"zet","text":"Папки с бумагами","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone11","name":"","t":"r","a":[424,397,566,472],"look":[{"if":"","who":"zet","text":"Коробка, комикс и снова папки","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone12","name":"","t":"r","a":[316,114,409,354],"look":[{"if":"","who":"zet","text":"Какая-то группа. Цирковая что-ль?","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone13","name":"","t":"r","a":[148,66,299,348],"look":[{"if":"","who":"zet","text":"Грустное солнце и три буквы на плакате","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone14","name":"","t":"r","a":[15,37,122,345],"look":[{"if":"","who":"zet","text":"Не знаю что за группа \"ИНО\", но вокалиста точно зовут Виктор","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone15","name":"","t":"r","a":[99,355,334,546],"look":[{"if":"","who":"zet","text":"Неудачный эксперимент пошива - косуха с четырьмя рукавами","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone16","name":"","t":"r","a":[-17,486,111,632],"look":[{"if":"","who":"zet","text":"Фирмовая LesPaul гитара","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone17","name":"","t":"r","a":[372,542,548,646],"look":[{"if":"","who":"zet","text":"Диски оформленные в виде пластинок","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone18","name":"","t":"r","a":[546,503,644,591],"look":[{"if":"","who":"zet","text":"Анархическая кружка с двумя ручками, вторая сломана","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone19","name":"","t":"r","a":[546,612,795,710],"look":[{"if":"","who":"zet","text":"Стихи Есенина написанные от руки плохим почерком","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone20","name":"","t":"r","a":[663,558,770,616],"look":[{"if":"","who":"zet","text":"Переполненная пепельница сигарет Camel","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone21","name":"","t":"r","a":[775,588,847,664],"look":[{"if":"","who":"zet","text":"Ингалятор для астматиков","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone22","name":"","t":"r","a":[760,182,892,293],"look":[{"if":"","who":"zet","text":"Лампа на подставке от микрофона","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone23","name":"","t":"r","a":[830,577,943,644],"look":[{"if":"","who":"zet","text":"Пустые CD-RW","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone24","name":"","t":"r","a":[902,472,991,607],"look":[{"if":"","who":"zet","text":"Стакан с карандашами, половина не заточенные","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone25","name":"","t":"r","a":[1014,416,1110,551],"look":[{"if":"","who":"zet","text":"Одна колонка из двух, зато какая","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone26","name":"","t":"r","a":[24,670,128,752],"look":[{"if":"","who":"zet","text":"Коробка из под обуви под столом из Икеи","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone27","name":"","t":"r","a":[602,68,763,142],"look":[{"if":"","who":"zet","text":"Неиндексируемое богатство...","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone28","name":"","t":"r","a":[847,322,1007,467],"look":[{"if":"","who":"zet","text":"Монитор","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone29","name":"","t":"r","a":[1012,335,1110,420],"look":[{"if":"","who":"zet","text":"Вентиляционное отверстие монитора","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone30","name":"","t":"r","a":[1033,62,1142,330],"look":[{"if":"","who":"zet","text":"Выход из комнаты","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone31","name":"","t":"r","a":[805,541,904,583],"look":[{"if":"","who":"zet","text":"Кассеты группы Сектор Газа","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone32","name":"","t":"r","a":[734,512,912,546],"look":[{"if":"","who":"zet","text":"Клавиатура Genius пожелтевшая с 1996 года и кнопкой Power под клавишей Delete","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone33","name":"","t":"r","a":[605,374,637,422],"look":[{"if":"","who":"zet","text":"Напульсник из кожзама","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone34","name":"","t":"r","a":[720,486,750,517],"look":[{"if":"","who":"zet","text":"Браслет с алиэкспресс","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone35","name":"","t":"r","a":[653,407,712,491],"look":[{"if":"","who":"zet","text":"Пиратский флаг на футболке","bx":null,"by":null,"act":[]}],"use":[]},{"id":"zone36","name":"","t":"r","a":[675,258,776,397],"look":[{"if":"","who":"zet","text":"Продолжение следует...","bx":null,"by":null,"act":[]}],"use":[]}],"arrows":[],"sprites":[]}],"puzzleTypes":[{"type":"custom2","code":"// Тип головоломки: функция (p, A, params) → объект-экземпляр. Спецификация — «? Справка» и документ для разработчика.\n// Тип головоломки: keymaster\n// Зажать круглую головку ключа, повернуть её вниз по дуге и отпустить,\n// когда внутри замка появится короткий металлический щелчок.\n(p, A, params) => {\n  const cx = A.area.w / 2;\n  const cy = 345;\n  const maxTurn = 1.16;\n  const targets = [0.34, 0.70, 1.04];\n  const tolerances = [0.060, 0.052, 0.045];\n  const keyRadius = 207;\n\n  let stage = 0;\n  let angle = 0;\n  let dragging = false;\n  let springBack = false;\n  let near = false;\n  let clock = 0;\n  let message = 'Зажми круглую головку ключа и медленно поверни вниз';\n\n  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));\n  const rounded = (x, y, w, h, r) => {\n    g.beginPath();\n    g.moveTo(x + r, y);\n    g.arcTo(x + w, y, x + w, y + h, r);\n    g.arcTo(x + w, y + h, x, y + h, r);\n    g.arcTo(x, y + h, x, y, r);\n    g.arcTo(x, y, x + w, y, r);\n    g.closePath();\n  };\n  const tone = (freqs, type, dur, vol, slide) => {\n    try { A.tone(freqs, type || 'sine', dur || 0.1, vol == null ? 0.07 : vol, slide); } catch (e) {}\n  };\n  const sayHint = (text, seconds) => {\n    message = text;\n  };\n  const target = () => targets[Math.min(stage, 2)];\n  const tolerance = () => tolerances[Math.min(stage, 2)];\n  const handlePos = () => ({\n    x: cx - keyRadius * Math.cos(angle),\n    y: cy + keyRadius * Math.sin(angle)\n  });\n  const pointerAngle = (x, y) => {\n    const raw = Math.atan2(y - cy, x - cx);\n    return clamp(Math.PI - raw, 0, maxTurn);\n  };\n\n  function drawBackground() {\n    const grad = g.createRadialGradient(cx, 300, 60, cx, 330, 700);\n    grad.addColorStop(0, '#3a3021');\n    grad.addColorStop(0.58, '#211b13');\n    grad.addColorStop(1, '#0b0907');\n    g.fillStyle = grad;\n    g.fillRect(0, 0, A.area.w, A.area.h);\n\n    g.save();\n    g.globalAlpha = 0.22;\n    g.strokeStyle = '#8a6940';\n    g.lineWidth = 2;\n    for (let y = 18; y \u003c 735; y += 47) {\n      g.beginPath(); g.moveTo(0, y); g.lineTo(1152, y + Math.sin(y) * 3); g.stroke();\n    }\n    for (let x = 35; x \u003c 1152; x += 190) {\n      g.beginPath(); g.moveTo(x, 0); g.lineTo(x + 8, 745); g.stroke();\n    }\n    g.restore();\n  }\n\n  function drawLockPlate() {\n    const plate = g.createLinearGradient(cx - 230, cy - 210, cx + 230, cy + 220);\n    plate.addColorStop(0, '#877044');\n    plate.addColorStop(0.22, '#3d3528');\n    plate.addColorStop(0.52, '#201d18');\n    plate.addColorStop(0.82, '#55452e');\n    plate.addColorStop(1, '#17140f');\n    g.fillStyle = '#070605';\n    rounded(cx - 245, cy - 220, 490, 445, 32); g.fill();\n    g.fillStyle = plate;\n    rounded(cx - 235, cy - 215, 470, 430, 28); g.fill();\n    g.strokeStyle = '#b39459'; g.lineWidth = 4;\n    rounded(cx - 226, cy - 206, 452, 412, 23); g.stroke();\n    g.strokeStyle = '#17130d'; g.lineWidth = 2;\n    rounded(cx - 214, cy - 194, 428, 388, 18); g.stroke();\n\n    [[cx - 190, cy - 165], [cx + 190, cy - 165], [cx - 190, cy + 165], [cx + 190, cy + 165]].forEach(([x, y]) => {\n      const rg = g.createRadialGradient(x - 3, y - 4, 1, x, y, 12);\n      rg.addColorStop(0, '#d8bd7c'); rg.addColorStop(1, '#47351d');\n      g.fillStyle = rg; g.beginPath(); g.arc(x, y, 11, 0, Math.PI * 2); g.fill();\n      g.strokeStyle = '#17120b'; g.lineWidth = 2; g.stroke();\n      g.beginPath(); g.moveTo(x - 5, y + 4); g.lineTo(x + 5, y - 4); g.stroke();\n    });\n\n    const cg = g.createRadialGradient(cx - 25, cy - 35, 8, cx, cy, 105);\n    cg.addColorStop(0, '#b79a60');\n    cg.addColorStop(0.35, '#675331');\n    cg.addColorStop(0.72, '#2b251b');\n    cg.addColorStop(1, '#090807');\n    g.fillStyle = cg; g.beginPath(); g.arc(cx, cy, 106, 0, Math.PI * 2); g.fill();\n    g.strokeStyle = '#c3a66b'; g.lineWidth = 7; g.stroke();\n    g.strokeStyle = '#19140d'; g.lineWidth = 3;\n    g.beginPath(); g.arc(cx, cy, 91, 0, Math.PI * 2); g.stroke();\n\n    const hg = g.createRadialGradient(cx - 8, cy - 12, 2, cx, cy, 65);\n    hg.addColorStop(0, '#090909'); hg.addColorStop(0.7, '#17130e'); hg.addColorStop(1, '#050505');\n    g.fillStyle = hg; g.beginPath(); g.arc(cx, cy, 65, 0, Math.PI * 2); g.fill();\n    g.strokeStyle = '#8c7243'; g.lineWidth = 3; g.stroke();\n\n    g.fillStyle = '#020202';\n    g.beginPath(); g.ellipse(cx, cy - 2, 18, 34, 0, 0, Math.PI * 2); g.fill();\n    g.beginPath(); g.arc(cx, cy + 25, 23, 0, Math.PI * 2); g.fill();\n\n    g.textAlign = 'center'; g.textBaseline = 'middle';\n    g.fillStyle = '#bda16b'; g.font = 'bold 17px Georgia, serif';\n    g.fillText('MECHANICAL LOCK', cx, cy - 166);\n    g.fillStyle = '#74603e'; g.font = '12px Georgia, serif';\n    g.fillText('NO FORCE — FEEL THE CLICK', cx, cy + 178);\n    g.textAlign = 'left'; g.textBaseline = 'alphabetic';\n  }\n\n  function drawKey() {\n    const shakeX = near && dragging ? Math.sin(clock * 58) * 2.2 : 0;\n    const shakeY = near && dragging ? Math.cos(clock * 63) * 2.2 : 0;\n    g.save();\n    g.translate(cx + shakeX, cy + shakeY);\n    g.rotate(-angle);\n\n    const gold = g.createLinearGradient(-220, -45, 110, 40);\n    gold.addColorStop(0, '#6b4b1f');\n    gold.addColorStop(0.25, '#e1c17a');\n    gold.addColorStop(0.52, '#9a7436');\n    gold.addColorStop(0.78, '#f0d58d');\n    gold.addColorStop(1, '#765222');\n\n    g.fillStyle = '#17120b';\n    rounded(-174, -17, 274, 34, 8); g.fill();\n    g.fillStyle = gold;\n    rounded(-177, -14, 270, 27, 7); g.fill();\n    g.strokeStyle = '#f0d28a'; g.lineWidth = 2; g.stroke();\n\n    g.fillStyle = '#6f4d20';\n    g.fillRect(36, 8, 19, 25);\n    g.fillRect(66, 8, 18, 18);\n    g.fillStyle = '#d9b66c';\n    g.fillRect(39, 7, 12, 5);\n    g.fillRect(69, 7, 12, 5);\n    g.fillStyle = gold;\n    rounded(87, -10, 20, 20, 5); g.fill();\n\n    g.lineWidth = 18; g.strokeStyle = '#17120b';\n    g.beginPath(); g.arc(-211, 0, 43, 0, Math.PI * 2); g.stroke();\n    g.lineWidth = 13; g.strokeStyle = gold;\n    g.beginPath(); g.arc(-211, 0, 43, 0, Math.PI * 2); g.stroke();\n    g.lineWidth = 3; g.strokeStyle = '#f2d895';\n    g.beginPath(); g.arc(-211, 0, 35, 0, Math.PI * 2); g.stroke();\n    g.fillStyle = '#18130d'; g.beginPath(); g.arc(-211, 0, 24, 0, Math.PI * 2); g.fill();\n    g.strokeStyle = '#9b783f'; g.lineWidth = 2; g.stroke();\n\n    g.fillStyle = '#f4dda0'; g.beginPath(); g.arc(-211, -42, 4, 0, Math.PI * 2); g.fill();\n    g.restore();\n\n    const hp = handlePos();\n    if (dragging || near) {\n      g.save();\n      g.strokeStyle = near ? '#f2d27a' : '#b99a5e';\n      g.globalAlpha = near ? 0.75 : 0.35;\n      g.lineWidth = near ? 5 : 3;\n      g.beginPath(); g.arc(hp.x, hp.y, 55, 0, Math.PI * 2); g.stroke();\n      g.restore();\n    }\n  }\n\n  function drawTurnArc() {\n    const r = 255;\n    g.save();\n    g.lineCap = 'round';\n    g.strokeStyle = 'rgba(220,190,125,.22)'; g.lineWidth = 7;\n    g.beginPath(); g.arc(cx, cy, r, Math.PI, Math.PI - maxTurn, true); g.stroke();\n    if (angle > 0.005) {\n      g.strokeStyle = near ? '#f2d27a' : '#b99352';\n      g.lineWidth = 8;\n      g.beginPath(); g.arc(cx, cy, r, Math.PI, Math.PI - angle, true); g.stroke();\n    }\n    const mx = cx + r * Math.cos(Math.PI - angle);\n    const my = cy + r * Math.sin(Math.PI - angle);\n    g.fillStyle = near ? '#fff0b0' : '#c5a467';\n    g.beginPath(); g.arc(mx, my, near ? 9 : 6, 0, Math.PI * 2); g.fill();\n    g.restore();\n  }\n\n  function drawProgress() {\n    const y = 590;\n    g.textAlign = 'center'; g.textBaseline = 'middle';\n    g.fillStyle = '#d6c49d'; g.font = '18px Georgia, serif';\n    g.fillText('ВНУТРЕННИЕ ФИКСАТОРЫ', cx, y - 38);\n    for (let i = 0; i \u003c 3; i++) {\n      const x = cx - 92 + i * 92;\n      const done = i \u003c stage;\n      const active = i === stage && !A.solved();\n      g.save();\n      g.fillStyle = done ? '#d9b66c' : active ? '#57482c' : '#211d17';\n      g.strokeStyle = done ? '#f5d994' : active ? '#c09b58' : '#6f5b39';\n      g.lineWidth = active ? 4 : 2;\n      g.beginPath(); g.arc(x, y, 22, 0, Math.PI * 2); g.fill(); g.stroke();\n      g.fillStyle = done ? '#21190c' : '#d6c49d';\n      g.font = 'bold 17px Georgia, serif';\n      g.fillText(done ? '✓' : String(i + 1), x, y + 1);\n      g.restore();\n    }\n    g.textAlign = 'left'; g.textBaseline = 'alphabetic';\n  }\n\n  function drawMessage() {\n    const solved = A.solved();\n    const text = solved ? 'Замок открылся! Нажми ВЫХОД.' : message;\n    const color = solved ? '#e8ca83' : near ? '#ffe6a0' : '#d5c6a5';\n    g.save();\n    g.fillStyle = 'rgba(5,4,3,.78)';\n    rounded(190, 640, 772, 58, 12); g.fill();\n    g.strokeStyle = near || solved ? '#c4a365' : '#55472f';\n    g.lineWidth = 2; g.stroke();\n    g.fillStyle = color;\n    g.font = solved ? 'bold 23px Georgia, serif' : '20px Georgia, serif';\n    g.textAlign = 'center'; g.textBaseline = 'middle';\n    g.fillText(text, cx, 669);\n    g.restore();\n  }\n\n  return {\n    open() {\n      dragging = false;\n      near = false;\n      springBack = false;\n      if (A.solved()) {\n        stage = 3;\n        angle = maxTurn;\n      } else {\n        stage = 0;\n        angle = 0;\n        sayHint('Зажми круглую головку ключа и медленно поверни вниз', 0);\n      }\n    },\n\n    click(x, y) {\n      if (A.solved() || springBack) return;\n      const hp = handlePos();\n      if (Math.hypot(x - hp.x, y - hp.y) \u003c= 68) {\n        dragging = true;\n        near = false;\n        sayHint('Поворачивай медленно. Слушай механизм…', 0);\n      } else {\n        sayHint('Возьмись мышью за круглую головку ключа', 1.8);\n      }\n    },\n\n    move(x, y) {\n      if (!dragging || A.solved()) return;\n      angle = pointerAngle(x, y);\n      const close = Math.abs(angle - target()) \u003c= tolerance();\n      if (close && !near) {\n        tone([740, 980], 'sine', 0.085, 0.075);\n        sayHint('Есть щелчок! Отпусти ключ.', 0);\n      } else if (!close && near) {\n        sayHint('Проскочил… попробуй немного вернуть назад.', 1.4);\n      }\n      near = close;\n    },\n\n    up() {\n      if (!dragging) return;\n      dragging = false;\n      if (A.solved()) return;\n\n      if (Math.abs(angle - target()) \u003c= tolerance()) {\n        stage++;\n        near = false;\n        if (stage >= 3) {\n          angle = maxTurn;\n          springBack = false;\n          tone([523, 659, 784], 'triangle', 0.42, 0.12);\n          sayHint('Щёлк! Ключ провернулся до конца.', 0);\n          A.solve();\n        } else {\n          tone([620, 820], 'triangle', 0.16, 0.09);\n          sayHint(stage === 1 ? 'Первый фиксатор отошёл. Ключ вернулся — ещё два.' : 'Второй фиксатор! Остался последний.', 2.4);\n          springBack = true;\n        }\n      } else {\n        near = false;\n        springBack = true;\n        tone([190], 'sawtooth', 0.13, 0.055, 125);\n        sayHint('Нет… механизм упёрся. Попробуй медленнее.', 2.1);\n      }\n    },\n\n    update(dt) {\n      clock += dt;\n      if (springBack && !dragging) {\n        angle += (0 - angle) * Math.min(1, dt * 9);\n        if (angle \u003c 0.012) {\n          angle = 0;\n          springBack = false;\n        }\n      }\n    },\n\n    draw() {\n      g.save();\n      g.beginPath(); g.rect(0, 0, A.area.w, A.area.h); g.clip();\n      drawBackground();\n      A.frame(p.name || 'Открытие замка');\n      drawLockPlate();\n      drawTurnArc();\n      drawKey();\n      drawProgress();\n      drawMessage();\n\n      if (!A.solved()) {\n        g.fillStyle = '#a99875'; g.font = '15px Georgia, serif';\n        g.textAlign = 'center'; g.textBaseline = 'middle';\n        g.fillText('Удерживай кнопку мыши и веди головку ключа по дуге вниз', cx, 535);\n      }\n      g.restore();\n    },\n\n    close() {\n      dragging = false;\n      springBack = false;\n    }\n  };\n}","note":"keymaster"}]};</script><script>/* тип головоломки «custom2» */
+PUZZLES["custom2"]=(
+// Тип головоломки: функция (p, A, params) → объект-экземпляр. Спецификация — «? Справка» и документ для разработчика.
+// Тип головоломки: keymaster
+// Зажать круглую головку ключа, повернуть её вниз по дуге и отпустить,
+// когда внутри замка появится короткий металлический щелчок.
+(p, A, params) => {
+  const cx = A.area.w / 2;
+  const cy = 345;
+  const maxTurn = 1.16;
+  const targets = [0.34, 0.70, 1.04];
+  const tolerances = [0.060, 0.052, 0.045];
+  const keyRadius = 207;
 
-const S={
-    scene:'splash',inv:['guitar'],found:{},held:null,bubble:null,bubbleCX:undefined,bubbleCY:undefined,
-    mx:0,my:0,down:false,px:150,tx:150,dir:1,walk:0,fade:null,last:0,
-    queue:[],hpDrag:null,hpFixed:false,busReady:false,guySmoked:false,l6seen:false,puzzleKind:null,hp:null,
-    puzzleActive:false, puzzleSolved:false, screwdriver_broken:false, key_in_puzzle:false,
-    busPaid:false,needSeat:false,rub:0,seatMoney:false,busGivers:{},conductorClicks:0,l7Started:false,
-    tsoyStarted:false,tsoyComplete:false,tsoyPlaying:false,chordSolved:false,concertPlaying:false,concertDone:false,chord:null,
-    dbuf:'',dbg:false,b6Seen:false
-};
+  let stage = 0;
+  let angle = 0;
+  let dragging = false;
+  let springBack = false;
+  let near = false;
+  let clock = 0;
+  let message = 'Зажми круглую головку ключа и медленно поверни вниз';
 
-const DOG={x:700,y:560,w:180,h:140};
-
-const puzzleGrid = Array.from({length: 9}, () => Array.from({length: 9}, () => ({t:0, r:0})));
-
-function initPuzzle() {
-    const types = [1, 1, 1, 2, 2, 3, 4];
-    for(let y=0; y<9; y++) for(let x=0; x<9; x++) {
-        puzzleGrid[y][x] = {t: types[Math.floor(Math.random()*types.length)], r: Math.floor(Math.random()*4)};
-    }
-    puzzleGrid[0][0] = {t:5, r:0};
-    puzzleGrid[0][1] = {t:3, r:0};
-    puzzleGrid[0][2] = {t:2, r:1};
-    puzzleGrid[1][2] = {t:1, r:1};
-    puzzleGrid[2][2] = {t:3, r:1};
-    puzzleGrid[2][3] = {t:1, r:0};
-    puzzleGrid[2][4] = {t:2, r:1};
-    puzzleGrid[3][4] = {t:1, r:1};
-    puzzleGrid[4][4] = {t:3, r:1};
-    puzzleGrid[4][5] = {t:1, r:0};
-    puzzleGrid[4][6] = {t:2, r:1};
-    puzzleGrid[5][6] = {t:1, r:1};
-    puzzleGrid[6][6] = {t:3, r:2};
-    puzzleGrid[6][5] = {t:1, r:0};
-    puzzleGrid[6][4] = {t:2, r:1};
-    puzzleGrid[7][4] = {t:1, r:1};
-    puzzleGrid[8][4] = {t:3, r:2};
-    puzzleGrid[8][3] = {t:1, r:0};
-    puzzleGrid[8][2] = {t:8, r:0};
-    puzzleGrid[8][1] = {t:8, r:0};
-    puzzleGrid[8][0] = {t:6, r:0};
-    puzzleGrid[1][1] = {t:2, r:0};
-    puzzleGrid[2][1] = {t:1, r:1};
-    puzzleGrid[3][1] = {t:3, r:0};
-    puzzleGrid[3][2] = {t:1, r:0};
-    puzzleGrid[3][3] = {t:2, r:2};
-    puzzleGrid[4][3] = {t:2, r:1};
-    puzzleGrid[5][3] = {t:1, r:1};
-    puzzleGrid[6][3] = {t:2, r:1};
-    puzzleGrid[7][3] = {t:2, r:0};
-    puzzleGrid[8][3] = {t:2, r:0};
-    S.puzzleSolved = false;
-    S.key_in_puzzle = false;
-    S.inv = S.inv.filter(item => item !== 'key');
-    if(S.found.key) S.inv.push('key');
-}
-
-const HOTSPOTS=[
- ['key',800,700,48,'А вот и путь к свободе из своего спокойствия.'],
- ['cigarette',562,440,22,'Так вот куда я её уронил.'],
- ['matches',493,535,35,'Ну спички у меня всегда с собой.'],
- ['matches',596,549,35,'Ну спички у меня всегда с собой.'],
- ['texts',557,144,78,'Бумага под одеждой хорошо согревает.']];
-const SELF={key:'Да, определённо это ключ от моего дома.',cigarette:'Закурить? Хорошая идея. Но зачем?',texts:'Свои тексты я помню наизусть, а записи не для меня.',matches:'Не буду тратить источник огня впустую.',guitar:'Пальцы болят, пожалуй не буду.',basbook:'Читал давненько. Бассуров уже давно на комиксы перешёл и видео.',screwdriver:'ГОСТ 17199-88.',brokenmediator:'Кто его так изогнул? Я даже не могу разогнуть обратно.',mediator:'Хороший медиатор. И для гитары сгодится, и корпус вскрыть.',dirtbottle:'Я вчера её не стал пить грязную и сейчас не стану.',cleanbottle:'У меня много дел, выпивка может и подождать.',wethanky:'Мокрый платок мне сейчас ни к чему.'};
-const NOPE='Похоже это не сюда';
-const H2=[
- {id:'bin',t:'r',a:[22,478,95,668]},{id:'bench',t:'r',a:[838,525,985,612]},{id:'tunnel',t:'r',a:[885,360,1055,600]},{id:'door',t:'r',a:[90,310,190,595]},
- {id:'poster',t:'r',a:[1055,385,1122,497],say:'Афиша десятилетней давности. Какая-то забытая звезда 90-х приехать должна была.'},
- {id:'manhole',t:'e',a:[965,702,78,24],say:'Дурно пахнет оттуда.'},{id:'bike',t:'r',a:[218,388,284,497],say:'Уважаемые жильцы! Розыскивается велосипед Puky украденный с четвёртого этажа.'},
- {id:'window',t:'r',a:[288,203,377,392],say:'А там молодая семья ужинают вместе за столом...'},{id:'lamp',t:'r',a:[735,85,782,655],say:'Единственный источник яркого света здесь.'},
- {id:'lamp',t:'e',a:[845,105,45,28],say:'Единственный источник яркого света здесь.'},{id:'tree',t:'r',a:[398,25,700,200],say:'Осень здесь. Не люблю осень...'},
- {id:'tree',t:'r',a:[398,200,472,385],say:'Осень здесь. Не люблю осень...'},{id:'houses',t:'r',a:[560,180,722,385],say:'Счастливые светящиеся окна, счастливых людей вестимо.'},
- {id:'houses',t:'r',a:[840,110,1130,262],say:'Счастливые светящиеся окна, счастливых людей вестимо.'}];
-const POSTERS='Различные объявления для различных людей.',DRIPS='Кап-кап-кап... Пытка была такая китайская.',LAMP3='Фонарь отражается от лужи и дополняет светом этот тёмный уголок.';
-const H3=[
- {id:'drips',t:'r',a:[674,412,702,582],say:DRIPS},{id:'pipe',t:'r',a:[626,25,694,415],say:'Дождь кончился два дня назад. Откуда вода льётся?'},
- {id:'lamp',t:'r',a:[700,55,835,140],say:LAMP3},{id:'puddle',t:'e',a:[705,598,85,28],say:'Свет фонаря отражается от лужи. Вода, похоже, чистая.'},
- {id:'figure',t:'e',a:[467,657,180,60],say:''},{id:'bin3',t:'r',a:[22,428,122,680]},
- {id:'ad',t:'r',a:[75,82,182,245],say:POSTERS},{id:'ad',t:'r',a:[57,288,158,423],say:POSTERS},{id:'ad',t:'r',a:[503,228,580,350],say:POSTERS},
- {id:'ad',t:'r',a:[506,166,548,230],say:POSTERS},{id:'ad',t:'r',a:[230,308,276,362],say:POSTERS},{id:'ad',t:'r',a:[428,383,477,441],say:POSTERS},
- {id:'ad',t:'r',a:[695,266,760,326],say:POSTERS},{id:'wall',t:'r',a:[235,170,480,360],say:'Нет ничего более постоянного чем временное...'},
- {id:'crate',t:'r',a:[115,515,308,650],say:'Такое ощущение что он всегда здесь стоял.'},{id:'poster',t:'r',a:[1066,230,1132,470],say:'Очередной агитплакат от депутата обещавшего всё здесь отремонтировать. Он победил на выборах, кстати.'}];
-
-const H4 = [
- {id:'box', t:'r', a:[130, 620, 240, 720], say:'Днём здесь бабушка торгует семечками, а вечером Анатолич заявляет свои права на территорию'},
- {id:'trash_bin', t:'r', a:[960, 640, 1080, 740], say:'Ну у нас тут бутылки от компании Анатолича'},
- {id:'men', t:'r', a:[40, 380, 340, 730], say:'Дарова Зет. Выручай! Светофор не работает. А пиво уже заканчивается!'},
- {id:'traffic_light', t:'r', a:[480, 120, 540, 330], say:'Что ж, советская техника наконец-то сломалась. Надо поискать, где щиток у светофора.'},
- {id:'pole_base', t:'r', a:[405, 520, 450, 640], say:'Здесь пластина прикручена советскими болтами'},
- {id:'road', t:'r', a:[350, 450, 1100, 650], say:'Вроде вечер, а их как прорвало. Не перебежать'},
- {id:'shop', t:'r', a:[610, 330, 870, 480], say:'Народный магазин для страждущих о вечернем досуге. И не только вечернем'},
- {id:'tree', t:'r', a:[200, 50, 300, 450], say:'Совсем листьев нет. А ведь совсем недавно было зелено'},
- {id:'lamp', t:'r', a:[840, 50, 940, 350], say:'Ну хоть освещение нынче не подводит'},
- {id:'houses', t:'r', a:[600, 100, 1100, 300], say:'Всегда успокаивает свет в окне домов. Люди здесь...'},
- {id:'screwdriver_ground', t:'r', a:[340, 670, 390, 720], say:'Отвёртка! Откуда она тут?'}
-];
-
-const H5 = [
- {id:'men', t:'r', a:[630, 420, 900, 720], say:'Спасибо Зет! Спас нас от «засухи»!'},
- {id:'traffic_light', t:'r', a:[480, 120, 540, 330], say:'Тем и хороши старые технологии - они ремонтопригодные'},
- {id:'pole_base', t:'r', a:[405, 580, 450, 700], say:'Здесь пластина прикручена советскими болтами'},
- {id:'road', t:'r', a:[350, 450, 1100, 650], say:'Теперь дорога пуста. Никто не хочет стоять на светофоре'},
- {id:'shop', t:'r', a:[610, 330, 870, 480], say:'Народный магазин для страждущих о вечернем досуге. И не только вечернем'},
- {id:'lamp', t:'r', a:[840, 50, 940, 350], say:'Ну хоть освещение нынче не подводит'},
- {id:'houses', t:'r', a:[600, 100, 1100, 300], say:'Всегда успокаивает свет в окне домов. Люди здесь...'}
-];
-
-const NPCN={man:'Дядя',granny:'Бабушка',guy:'Парень'},NPCX={man:230,granny:430,guy:700};
-function npc(w,t){say(NPCN[w]+': "'+t+'"',NPCX[w]-50,90)}
-const H6=[
- {id:'man',t:'r',a:[345,275,470,640]},
- {id:'granny',t:'r',a:[570,390,690,620]},
- {id:'guy',t:'r',a:[835,320,950,620]},
- {id:'bin_stop',t:'r',a:[180,455,285,640]},
- {id:'sign',t:'r',a:[1010,20,1110,200],say:'Знак остановка. Обычно обозначает то, что здесь останавливается общественный транспорт.'},
- {id:'sign',t:'r',a:[1055,200,1095,610],say:'Знак остановка. Обычно обозначает то, что здесь останавливается общественный транспорт.'},
- {id:'houses',t:'r',a:[265,20,1000,140],say:'Эхх. Хорошо им, никуда идти не надо.'},
- {id:'ads',t:'r',a:[285,255,830,420],say:'Объявления: куплю, продам, ищу работу. Люди ищут выход как могут.'}
-];
-
-const H7=[
- {id:'conductor',t:'r',a:[800,210,935,720]},
- {id:'man',t:'r',a:[20,280,240,650]},
- {id:'womanRed',t:'r',a:[285,300,480,620]},
- {id:'oldMan',t:'r',a:[500,320,700,620]},
- {id:'sleepingAunt',t:'r',a:[935,300,1075,625]},
- {id:'signRides',t:'r',a:[50,15,340,125],say:'Действительно. Сидячих мест стало больше. Или людей стало меньше.'},
- {id:'signBread',t:'r',a:[400,45,600,170],say:'Сейчас такой хлеб, что даже свежий на вкус как позавчерашний.'},
- {id:'signApteka',t:'r',a:[600,80,800,200],say:'Хорошо что мне не нужно посещать данное заведение... Пока...'},
- {id:'signRoute',t:'r',a:[950,185,1060,312],say:'Ну а как же без улицы Ленина в провинциальном городе?'},
- {id:'lamp',t:'r',a:[800,10,930,90],say:'Тусклый жёлтый свет создаёт дополнительную атмосферу поездке'},
- {id:'handrail',t:'r',a:[735,180,800,720],say:'Спасительное средство чтобы не упасть в автобусе. Судя по чистоте, мылся последний раз примерно никогда'},
- {id:'window',t:'r',a:[80,170,400,360],say:'Люблю вечерний город, сел бы и смотрел пока еду, но надо решать вопрос с оплатой за проезд'},
- {id:'window2',t:'r',a:[430,150,740,300],say:'Люблю вечерний город, сел бы и смотрел пока еду, но надо решать вопрос с оплатой за проезд'},
- {id:'seatA',t:'r',a:[150,535,300,625]},
- {id:'seatB',t:'r',a:[478,520,528,615]},
- {id:'seatC',t:'r',a:[712,520,830,620]}
-];
-
-// back6mid - Остановка
-const HB6M=[
- {id:'shelter',t:'r',a:[300,300,600,600],say:'Остановка. Пусто.'},
- {id:'trash',t:'r',a:[150,500,250,620],say:'Мусорка.'},
- {id:'sign',t:'r',a:[900,100,1000,400],say:'Дорожный знак.'}
-];
-// back6left - Гаражи
-const HB6L=[
- {id:'dog',t:'r',a:[DOG.x-80,DOG.y-30,DOG.x+DOG.w+40,DOG.y+DOG.h+20]},
- {id:'garage1',t:'r',a:[150,350,450,700],say:'Закрытые гаражи. Интересно, что там внутри?'},
- {id:'garage2',t:'r',a:[480,380,680,720],say:'Ржавая дверь гаража, замок навесной.'},
- {id:'car',t:'r',a:[740,490,920,620],say:'Старая «шестёрка». Кажется, она здесь надолго.'},
- {id:'lamp',t:'r',a:[930,50,1000,500],say:'Фонарь светит, но толку от него немного.'},
- {id:'fence',t:'r',a:[900,550,1080,720],say:'Сетка-рабица. Через неё видно тёмный двор.'}
-];
-// back6right - Магазины (хитбоксы сдвинуты левее, чтобы булочная ловилась по центру)
-const HB6R=[
- {id:'produkty',t:'r',a:[20,300,220,700],say:'«Продукты». Витрина светится, но внутри пусто.'},
- {id:'pivo',t:'r',a:[220,300,420,700],say:'«Пиво». Самое популярное место в этом районе.'},
- {id:'svyaz',t:'r',a:[420,300,620,700],say:'«Связь». Сим-карты, телефоны, ремонт.'},
- {id:'bulochka',t:'r',a:[620,300,820,700],say:'«Булочная». Отсюда всегда пахнет свежим хлебом.'},
- {id:'lamp',t:'r',a:[950,50,1050,500],say:'Уличный фонарь.'}
-];
-
-function hit(L,x,y){for(const z of L){const a=z.a;if(z.t=='r'?(x>=a[0]&&x<=a[2]&&y>=a[1]&&y<=a[3]):(((x-a[0])/a[2])**2+((y-a[1])/a[3])**2<=1))return z}return null}
-function hit4(x,y){for(const z of H4){const a=z.a;if(z.t=='r'?(x>=a[0]&&x<=a[2]&&y>=a[1]&&y<=a[3]):(((x-a[0])/a[2])**2+((y-a[1])/a[3])**2<=1))return z}return null}
-function hit5(x,y){for(const z of H5){const a=z.a;if(z.t=='r'?(x>=a[0]&&x<=a[2]&&y>=a[1]&&y<=a[3]):(((x-a[0])/a[2])**2+((y-a[1])/a[3])**2<=1))return z}return null}
-
-const HINT='Соберите всё необходимое чтобы покинуть жилище. Вещи могут лежать не только на видном месте, но и в скрытых местах. Например карман.';
-let AC;
-function beep(){try{AC=AC||new AudioContext();const o=AC.createOscillator(),v=AC.createGain(),t=AC.currentTime;o.type='square';o.frequency.value=900;v.gain.setValueAtTime(.08,t);v.gain.exponentialRampToValueAtTime(.001,t+.06);o.connect(v);v.connect(AC.destination);o.start();o.stop(t+.07)}catch(e){}}
-
-function playChordSound(name) {
-    try {
-        AC = AC || new (window.AudioContext || window.webkitAudioContext)();
-        if (AC.state === 'suspended') AC.resume();
-        const freqs = {
-            'Am': [220.00, 261.63, 329.63],
-            'F': [174.61, 220.00, 261.63],
-            'C': [130.81, 164.81, 196.00],
-            'E': [164.81, 207.65, 246.94]
-        };
-        const notes = freqs[name];
-        if (!notes) return;
-        const t = AC.currentTime;
-        notes.forEach(f => {
-            const o = AC.createOscillator(), v = AC.createGain();
-            o.type = 'triangle';
-            o.frequency.setValueAtTime(f, t);
-            v.gain.setValueAtTime(0.15, t);
-            v.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
-            o.connect(v); v.connect(AC.destination);
-            o.start(t); o.stop(t + 1.2);
-        });
-    } catch(e) {}
-}
-function playErrorSound() {
-    try {
-        AC = AC || new (window.AudioContext || window.webkitAudioContext)();
-        if (AC.state === 'suspended') AC.resume();
-        const t = AC.currentTime;
-        const o = AC.createOscillator(), v = AC.createGain();
-        o.type = 'sawtooth';
-        o.frequency.setValueAtTime(150, t);
-        o.frequency.exponentialRampToValueAtTime(80, t + 0.3);
-        v.gain.setValueAtTime(0.2, t);
-        v.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
-        o.connect(v); v.connect(AC.destination);
-        o.start(t); o.stop(t + 0.3);
-    } catch(e) {}
-}
-
-function drawImageSafe(img, ...args) { if (img && img.width > 0) g.drawImage(img, ...args); }
-
-async function init(){
- try{const f=new FontFace('Amatic SC','url(fonts/AmaticSC-Regular.ttf)');document.fonts.add(await f.load())}catch(e){}
- for(const k in SRC)IMG[k]=await load('images/'+SRC[k]+'.png');
- IMG.back0=await load('images/backs/back0.jpg'); IMG.back1=await load('images/backs/back1.jpg');
- IMG.back2=await load('images/backs/back2.jpg'); IMG.back3=await load('images/backs/back3.jpg');
- IMG.back3n=await load('images/backs/back3n.jpg');
- IMG.back4=await load('images/backs/back4.jpg'); IMG.back5=await load('images/backs/back5.jpg');
- IMG.back6mid=await load('images/backs/back6mid.jpg');
- IMG.back6left=await load('images/backs/back6left.jpg');
- IMG.back6right=await load('images/backs/back6right.jpg');
- IMG.dog=await load('images/character/dog_angry.png');
- IMG.puzzle_bg=await load('images/puzzle_bg.jpg');
- music.play().then(()=>{if(S.scene=='splash')S.scene='menu'}).catch(()=>{});requestAnimationFrame(loop);
-}
-function fit(){const k=Math.min(innerWidth/W,innerHeight/H);cv.style.width=W*k+'px';cv.style.height=H*k+'px'}
-
-// ==== Отладочное меню: наберите 178500 ====
-const DBG_CODE='178500';
-const LEVEL_PRESETS={
- l1:{inv:['guitar'],found:{}},
- l2:{inv:['guitar','key','cigarette','matches','texts'],found:{key:1,cigarette:1,matches:1,texts:1}},
- l3:{inv:['guitar','key','cigarette','matches','texts','dirtbottle','hanky'],found:{key:1,cigarette:1,matches:1,texts:1,dirtbottle:1,hanky:1}},
- l4:{inv:['guitar','key','cigarette','matches','texts','basbook','cleanbottle'],found:{key:1,cigarette:1,matches:1,texts:1,basbook:1,dirtbottle:1,hanky:1},placed:1,screwdriver_ground:1},
- l5:{inv:['guitar','key','cigarette','matches','texts','screwdriver'],found:{key:1,cigarette:1,matches:1,texts:1,basbook:1,dirtbottle:1,hanky:1,screwdriver_ground:1},placed:1},
- l6:{inv:['guitar','key','cigarette','matches','texts','brokenmediator'],found:{key:1,cigarette:1,matches:1,texts:1,basbook:1,dirtbottle:1,hanky:1,brokenmediator:1},placed:1,guySmoked:true},
- l7:{inv:['guitar','key','matches','texts','mediator'],found:{key:1,cigarette:1,matches:1,texts:1,basbook:1,dirtbottle:1,hanky:1,brokenmediator:1},placed:1,guySmoked:true,hpFixed:true,busReady:true,l6seen:true},
- back6mid:{inv:['guitar','key','matches','texts','mediator'],found:{key:1,cigarette:1,matches:1,texts:1,basbook:1,dirtbottle:1,hanky:1,brokenmediator:1},placed:1,guySmoked:true,hpFixed:true,busReady:true,l6seen:true},
- back6left:{inv:['guitar','key','matches','texts','mediator'],found:{key:1,cigarette:1,matches:1,texts:1,basbook:1,dirtbottle:1,hanky:1,brokenmediator:1},placed:1,guySmoked:true,hpFixed:true,busReady:true,l6seen:true},
- back6right:{inv:['guitar','key','matches','texts','mediator'],found:{key:1,cigarette:1,matches:1,texts:1,basbook:1,dirtbottle:1,hanky:1,brokenmediator:1},placed:1,guySmoked:true,hpFixed:true,busReady:true,l6seen:true}
-};
-function dbgStopAll(){[music,tick,eve,step,drip,streetMusic,theme2,busSnd,tsoy,letov,applause,dogBark].forEach(a=>{a.pause();a.currentTime=0})}
-function dbgEnterLevel(id){
- const p=LEVEL_PRESETS[id];if(!p)return;
- S.inv=p.inv.slice();S.found=Object.assign({},p.found);S.held=null;S.bubble=null;S.queue=[];
- S.placed=p.placed||0;S.guySmoked=!!p.guySmoked;S.hpFixed=!!p.hpFixed;S.busReady=!!p.busReady;S.l6seen=!!p.l6seen;
- S.screwdriver_broken=false;S.puzzleActive=false;S.puzzleKind=null;S.chord=null;S.key_in_puzzle=false;
- S.conductorClicks=0;S.rub=0;S.seatMoney=false;S.busGivers={};S.busPaid=false;S.needSeat=false;
- S.tsoyStarted=false;S.tsoyComplete=false;S.tsoyPlaying=false;S.chordSolved=false;S.concertPlaying=false;S.concertDone=false;
- clearTimeout(S.tsoyTimer);tsoy.onended=null;
- S.dbg=false;S.dbuf='';S.fade=null;
- if(id==='l1'){tick.play().catch(()=>{});mt=.12;S.scene='l1';return}
- if(id==='l2'){eve.play().catch(()=>{});startL2(150);return}
- if(id==='l3'){drip.play().catch(()=>{});startL3(150);return}
- if(id==='l4'){streetMusic.play().catch(()=>{});startL4(150);return}
- if(id==='l5'){music.play().catch(()=>{});streetMusic.play().catch(()=>{});startL5(150);return}
- if(id==='l6'){theme2.play().catch(()=>{});streetMusic.play().catch(()=>{});startL6();return}
- if(id==='back6mid'){streetMusic.play().catch(()=>{});startBack6Mid();return}
- if(id==='back6left'){eve.play().catch(()=>{});startBack6Left();return}
- if(id==='back6right'){streetMusic.play().catch(()=>{});startBack6Right();return}
- startL7();
-}
-const DBG_KEYS=['l1','l2','l3','l4','l5','l6','l7','back6mid','back6left','back6right'];
-const DBG_NAMES={l1:'Квартира Зета',l2:'Двор',l3:'Туннель и памятник',l4:'Улица со светофором',l5:'Магазины',l6:'Автобусная остановка',l7:'Автобус',back6mid:'Остановка',back6left:'Гаражи',back6right:'Магазины'};
-const DBG_POS=[[300,220],[700,220],[300,340],[700,340],[300,460],[700,460],[300,580],[700,580],[300,700],[700,700]];
-function dbgClick(x,y){
- for(let i=0;i<DBG_KEYS.length;i++){const[px,py]=DBG_POS[i];if(Math.abs(x-px)<130&&Math.abs(y-py)<50){dbgEnterLevel(DBG_KEYS[i]);return}}
- if(Math.abs(x-500)<130&&Math.abs(y-850)<50){S.dbg=false;S.dbuf='';return}
-}
-function drawDbgMenu(t){
- g.fillStyle='#141008';g.fillRect(0,0,W,H);
- g.textAlign='center';g.textBaseline='middle';
- g.font='64px "Amatic SC"';g.fillStyle='#e6cd96';
- g.fillText('Выбор уровня',W/2,100);
- for(let i=0;i<DBG_KEYS.length;i++){
-   const[px,py]=DBG_POS[i],hov=Math.abs(S.mx-px)<130&&Math.abs(S.my-py)<50;
-   g.fillStyle=hov?'rgba(230,205,150,.25)':'rgba(230,205,150,.08)';
-   g.strokeStyle='#e6cd96';g.lineWidth=2;
-   g.beginPath();g.roundRect?g.roundRect(px-130,py-50,260,100,12):g.rect(px-130,py-50,260,100);g.fill();g.stroke();
-   g.font='32px "Amatic SC"';g.fillStyle='#f1e2bd';
-   g.fillText((i+1)+'. '+DBG_NAMES[DBG_KEYS[i]],px,py);
- }
- const hov=Math.abs(S.mx-500)<130&&Math.abs(S.my-850)<50;
- g.fillStyle=hov?'rgba(230,205,150,.25)':'rgba(230,205,150,.08)';
- g.strokeStyle='#e6cd96';g.lineWidth=2;
- g.beginPath();g.roundRect?g.roundRect(370,800,260,100,12):g.rect(370,800,260,100);g.fill();g.stroke();
- g.font='36px "Amatic SC"';g.fillStyle='#f1e2bd';g.fillText('Вернуться',500,850);
- g.textAlign='left';g.textBaseline='top';
-}
-addEventListener('keydown',e=>{
- if(e.key==='Escape'){S.dbg=false;S.dbuf='';return}
- if(/^[0-9]$/.test(e.key)){
-   S.dbuf=(S.dbuf+e.key).slice(-DBG_CODE.length);
-   if(S.dbuf===DBG_CODE){dbgStopAll();S.dbg=true;S.dbuf=''}
- } else if(S.dbg&&/^[1-9]$/.test(e.key)){
-   const idx=parseInt(e.key)-1;if(DBG_KEYS[idx])dbgEnterLevel(DBG_KEYS[idx]);
- }
-});
-addEventListener('keydown',()=>{if(S.scene=='splash')S.scene='menu'});
-addEventListener('resize',fit);fit();
-function pos(e){const r=cv.getBoundingClientRect();S.mx=(e.clientX-r.left)*W/r.width;S.my=(e.clientY-r.top)*H/r.height}
-addEventListener('mousemove',e=>{pos(e);hpMove()});
-addEventListener('mouseup',()=>{S.down=false;hpUp()});
-addEventListener('contextmenu',e=>e.preventDefault());
-addEventListener('mousedown',e=>{
-    pos(e);S.down=true;ensureMusic();if(S.fade)return;
-    if(S.tsoyPlaying || S.concertPlaying) return;
-    if(S.bubble && S.queue.length){const q=S.queue.shift();say(q.t,q.cx,q.cy);if(q.fn)q.fn();return;}
-    if(S.bubble) { S.bubble = null; S.bubbleCX = undefined; S.bubbleCY = undefined; }
-    if(S.puzzleActive){
-        if(S.my > 745) { click(S.mx, S.my); }
-        else {
-            if(S.puzzleKind==='hp')hpDown(S.mx,S.my);
-            else if(S.puzzleKind==='chord')clickChord(S.mx,S.my);
-            else clickPuzzle(S.mx, S.my);
-        }
-        return;
-    }
-    click(S.mx,S.my);
-});
-
-function say(t, cx, cy){
-    if(S.scene && S.scene.indexOf('back6')===0){ cx=20; if(cy===undefined)cy=100; }
-    if(cx !== undefined) { cx = Math.max(20, Math.min(W - 320, cx)); }
-    if(cy !== undefined) { cy = Math.max(20, Math.min(H - 300, cy)); }
-    S.bubble=t; S.bubbleCX=cx; S.bubbleCY=cy;
-}
-function fadeTo(cb){S.fade={a:0,ph:1,cb}}
-function startL1(){S.scene='l1';mt=.12;tick.play().catch(()=>{});streetMusic.pause();}
-function startL2(px=150){S.scene='l2';tick.pause();drip.pause();streetMusic.pause();eve.play().catch(()=>{});S.px=px;S.tx=px;S.dir=1;S.held=null}
-function startL3(px=150){S.scene='l3';eve.pause();streetMusic.pause();drip.play().catch(()=>{});S.px=px;S.tx=px;S.dir=1;S.held=null}
-function startL4(px=150){S.scene='l4';eve.pause();drip.pause();streetMusic.play().catch(()=>{});S.px=px;S.tx=px;S.dir=1;S.held=null;}
-function startL5(px=150){S.scene='l5';theme2.pause();busSnd.pause();music.play().catch(()=>{});eve.pause();drip.pause();streetMusic.play().catch(()=>{});S.px=px;S.tx=px;S.dir=1;S.held=null}
-function startL6(){S.scene='l6';music.pause();busSnd.pause();theme2.play().catch(()=>{});eve.pause();drip.pause();streetMusic.play().catch(()=>{});S.px=100;S.tx=100;S.dir=1;S.held=null;
- if(!S.l6seen){S.l6seen=true;say('Вот же напасть. А денег то у меня нет на проезд.', S.px - 50, 100)}}
-
-function startBack6Mid(){
- S.scene='back6mid';
- music.pause();tick.pause();theme2.pause();busSnd.pause();drip.pause();eve.pause();
- streetMusic.play().catch(()=>{});
- S.px=100;S.tx=100;S.dir=1;S.held=null;
- S.bubble=null;S.bubbleCX=undefined;S.bubbleCY=undefined;
-}
-function startBack6Left(){
- S.scene='back6left';
- music.pause();tick.pause();theme2.pause();busSnd.pause();drip.pause();streetMusic.pause();
- eve.play().catch(()=>{});
- S.px=100;S.tx=100;S.dir=1;S.held=null;
- S.bubble=null;S.bubbleCX=undefined;S.bubbleCY=undefined;
-}
-function startBack6Right(){
- S.scene='back6right';
- music.pause();tick.pause();theme2.pause();busSnd.pause();drip.pause();eve.pause();
- streetMusic.play().catch(()=>{});
- S.px=100;S.tx=100;S.dir=1;S.held=null;
- S.bubble=null;S.bubbleCX=undefined;S.bubbleCY=undefined;
-}
-
-function startL7(){
- S.scene='l7';
- streetMusic.pause();
- theme2.volume=.7;
- theme2.play().catch(()=>{});
- busSnd.volume=.7;
- busSnd.play().catch(()=>{});
- S.held=null;
- S.px=450;
- S.tx=450;
- S.dir=1;
-
- if(!S.l7Started){
-   S.l7Started=true;
-   S.conductorClicks=0;
-   S.rub=0;
-   S.seatMoney=false;
-   S.busGivers={man:false,womanRed:false,oldMan:false,sleepingAunt:false};
-   S.busPaid=false;
-   S.needSeat=false;
-   S.tsoyStarted=false;
-   S.tsoyComplete=false;
-   S.tsoyPlaying=false;
-   S.chordSolved=false;
-   S.concertPlaying=false;
-   S.concertDone=false;
-   S.puzzleActive=false;
-   S.puzzleKind=null;
-   S.chord=null;
-   tsoy.pause();tsoy.currentTime=0;
-   clearTimeout(S.tsoyTimer);
-   tsoy.onended = null;
-   letov.pause();letov.currentTime=0;
-   applause.pause();applause.currentTime=0;
-   const idx=S.inv.indexOf('rub5');
-   if(idx>=0)S.inv.splice(idx,1);
-   say('Кондуктор: "Так, граждане пассажиры. Оплачиваем проезд. С вас 25 рублей."', 800, 80);
- }else{
-   say('Кондуктор: "Оплачиваем проезд. С вас 25 рублей."', 800, 80);
- }
-}
-
-function addRub(n=1){
- S.rub+=n*5;
- if(S.rub>0&&!S.inv.includes('rub5'))S.inv.push('rub5');
- beep();
-}
-function giveRub(id,text,cx,cy){
- if(S.busGivers[id])return;
- S.busGivers[id]=true;
- addRub(1);
- say(text,cx,cy);
-}
-function startTsoy(){
-  clearTimeout(S.tsoyTimer);
-  tsoy.onended = null;
-
-  const firstPlay = !S.tsoyStarted;
-
-  S.tsoyStarted = true;
-  S.tsoyPlaying = true;
-
-  theme2.volume = .05;
-  busSnd.volume = .35;
-
-  tsoy.pause();
-  tsoy.currentTime = 0;
-  tsoy.volume = 1.0;
-
-  const restoreAfterTsoy = () => {
-    S.tsoyPlaying = false;
-    busSnd.volume = .7;
-
-    if(S.scene === 'l7' && !S.puzzleActive){
-      theme2.volume = .25;
-      S.tsoyComplete = true;
-    }
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const rounded = (x, y, w, h, r) => {
+    g.beginPath();
+    g.moveTo(x + r, y);
+    g.arcTo(x + w, y, x + w, y + h, r);
+    g.arcTo(x + w, y + h, x, y + h, r);
+    g.arcTo(x, y + h, x, y, r);
+    g.arcTo(x, y, x + w, y, r);
+    g.closePath();
+  };
+  const tone = (freqs, type, dur, vol, slide) => {
+    try { A.tone(freqs, type || 'sine', dur || 0.1, vol == null ? 0.07 : vol, slide); } catch (e) {}
+  };
+  const sayHint = (text, seconds) => {
+    message = text;
+  };
+  const target = () => targets[Math.min(stage, 2)];
+  const tolerance = () => tolerances[Math.min(stage, 2)];
+  const handlePos = () => ({
+    x: cx - keyRadius * Math.cos(angle),
+    y: cy + keyRadius * Math.sin(angle)
+  });
+  const pointerAngle = (x, y) => {
+    const raw = Math.atan2(y - cy, x - cx);
+    return clamp(Math.PI - raw, 0, maxTurn);
   };
 
-  if(firstPlay){
-    tsoy.onended = () => {
-      restoreAfterTsoy();
-      if(S.scene === 'l7' && !S.puzzleActive){
-        say('Дед: "Что ты там брякаешь? Из-за автобуса ничего не слышно!"', 520, 100);
-      }
-    };
-    tsoy.play().catch(()=>{});
-  } else {
-    S.tsoyTimer = setTimeout(() => {
-      tsoy.pause();
-      tsoy.currentTime = 0;
-      restoreAfterTsoy();
-      if(S.scene === 'l7' && !S.puzzleActive){
-        say('Дед: "Плохо слышишь чтоль? Не слышно гитару, говорю!"', 520, 100);
-      }
-    }, 5000);
-    tsoy.play().catch(()=>{});
-  }
-}
-function startLetov(){
- S.puzzleActive=false;
- S.puzzleKind=null;
- S.concertPlaying=true;
- S.concertDone=false;
- theme2.volume=0;
- busSnd.volume=.35;
- letov.currentTime=0;
- letov.volume=1.0;
- letov.play().catch(()=>{});
- let finished=false;
- const finish=()=>{
-   if(finished)return;finished=true;
-   S.concertPlaying=false;
-   busSnd.volume=.7;
-   S.concertDone=true;
-   applause.currentTime=0;
-   applause.play().catch(()=>{});
-   theme2.volume=.7;
-   say('Аплодисменты!', 400, 100);
- };
- letov.onended=finish;
- setTimeout(finish,60000);
-}
-function initChordPuzzle(){
- S.puzzleActive=true;
- S.puzzleKind='chord';
- S.chord={
-   notes:[],score:0,target:0,
-   seq:['Am','F','C','E'],
-   lastSpawn:0,speed:220,interval:1.15,
-   solved:false,feedback:'',time:0
- };
-}
+  function drawBackground() {
+    const grad = g.createRadialGradient(cx, 300, 60, cx, 330, 700);
+    grad.addColorStop(0, '#3a3021');
+    grad.addColorStop(0.58, '#211b13');
+    grad.addColorStop(1, '#0b0907');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, A.area.w, A.area.h);
 
-function combine(h,o){
- if([h,o].includes('mediator')&&[h,o].includes('guitar')){
-   if(S.scene!=='l7'){say(NOPE, S.px - 50, 100);return}
-   if(S.chordSolved){say('Я уже вспомнил эту мелодию.', S.px - 50, 100);return}
-   if(!S.tsoyComplete){say('Сначала надо сыграть, чтобы вспомнить мелодию...', S.px - 50, 100);return}
-   tsoy.pause();
-   tsoy.currentTime=0;
-   theme2.volume=.25;
-   initChordPuzzle();
-   say('Как там играется народная любимая песня? Надо быстро подобрать', S.px - 50, 100);
-   return;
- }
- if([h,o].includes('matches')&&[h,o].includes('brokenmediator')){
-  S.inv[S.inv.indexOf('brokenmediator')]='mediator';beep();
-  say('Подогрел над спичкой, и пластик размяк. Теперь медиатор можно выровнять. Им ведь не только на гитаре играют, но и разбирают пластиковые корпуса, как лопаточкой.', S.px - 50, 100);return}
- const hk=[h,o].find(v=>v=='hanky'||v=='wethanky');
- if(hk&&[h,o].includes('dirtbottle')){
-  if(hk=='wethanky'){
-    S.inv[S.inv.indexOf('dirtbottle')]='cleanbottle';
-    S.inv.splice(S.inv.indexOf('wethanky'), 1);
-    say('Ну вот вчерашний слой грязи наконец убран. Платок изгваздался, выброшу его.', S.px - 50, 100);beep()
-  }
-  else say('Грязь присохла. Платок пачкается, а бутылка чище не становится.', S.px - 50, 100)
- }else say(NOPE, S.px - 50, 100)
-}
-
-function useItem(h,x,y){
- const firstPerson = S.scene.indexOf('back6')===0;
- const sceneList = {l2:H2,l3:H3,l4:H4,l5:H5,l6:H6,l7:H7,back6left:HB6L,back6mid:HB6M,back6right:HB6R}[S.scene]||H5;
- let z = hit(sceneList,x,y);
-
- if (S.scene === 'l7' && Math.abs(x - S.px) < 120 && y > 250 && y < 760) z = null;
-
- const id=z&&z.id;
- const self = !firstPerson && Math.abs(x-S.px)<100 && y>330 && y<800;
-
- if(firstPerson){
-   if(z && id==='dog'){
-     dogBark.currentTime=0;dogBark.play().catch(()=>{});
-     say('Злая собака нам не товарищ, дальше не пропустит');
-     return;
-   }
-   if(z && z.say){ say(z.say); return; }
-   say(NOPE);
-   return;
- }
-
- if(S.scene==='l7' && h==='guitar'){
-   if(id==='conductor'){say('Кондуктор: "Ты ещё и гитару украл где-то?"', 800, 80);return}
-   if(id==='womanRed'){say('Женщина в красном: "Я не умею играть."', 320, 100);return}
-   if(id==='oldMan'){say('Дед: "Трень-брень, я уже разучился играть."', 520, 100);return}
-   if(id==='man'){say('Самозабвенно переписывается в национальном месенджере.', 50, 100);return}
-   if(id==='sleepingAunt'){say('Человек мирно дремлет на заднем сиденье. Ни к чему будить...', 830, 100);return}
-   startTsoy();
-   return;
- }
-
- if(z){
-   if(S.scene=='l4'){
-     if(id=='men'){
-       if(h=='cigarette') say('Алкоголики: "О! Покурить угощают!" Зет: "Нет уж, последнюю сигарету попридержу у себя".', 300, 150);
-       else if(h=='texts') say('Алкоголики: "Нет. Такое не читаем!"', 300, 150);
-       else if(h=='key') say('Алкоголики: "А что он открывает? Сейф с деньгами?"', 300, 150);
-       else if(h=='matches') say('Зет: "Не буду тратить последний источник огня".', 300, 150);
-       else if(h=='basbook') { say('Анатолич: "О! Моя книга нашлась! Спасибо! Жаль не вижу закладку-отвёртку".', 300, 150); S.inv.splice(S.inv.indexOf('basbook'),1); S.found.screwdriver_ground = true; beep(); }
-       else say(NOPE, 300, 150);
-       return;
-     }
-     if(id=='pole_base' && h=='screwdriver'){
-       S.inv.splice(S.inv.indexOf('screwdriver'), 1);
-       S.screwdriver_broken = true;
-       S.puzzleActive = true;
-       beep();
-       say('Это была поддельная отвёртка, она сломалась, но щиток открутили', S.px - 50, 100);
-       return;
-     }
-   }
-   if(S.scene=='l5'){
-     if(id=='men'){
-       if(h=='guitar') say('Теперь около магазина они не отстанут от меня с гитарой. Лучше не буду.', 300, 150);
-       else if(h=='cigarette') say('Алкоголики: "О! Покурить угощают!" Зет: "Нет уж, последнюю сигарету попридержу у себя".', 300, 150);
-       else if(h=='texts') say('Алкоголики: "Нет. Такое не читаем!"', 300, 150);
-       else if(h=='key') say('Алкоголики: "А что он открывает? Сейф с деньгами?"', 300, 150);
-       else if(h=='matches') say('Зет: "Не буду тратить последний источник огня".', 300, 150);
-       else say(NOPE, 300, 150);
-       return;
-     }
-   }
-   if(S.scene=='l6'){
-     const noHead='Он в наушниках. Не слышит. Или делает вид что не слышит.';
-     if(id=='man'){
-       if(h=='guitar') npc('man','А Кукушку можешь сыграть? Нет? Жаль.');
-       else if(h=='cigarette') npc('man','Не, не курю.');
-       else if(h=='texts') npc('man','Извини, не люблю стихи.');
-       else say(NOPE);
-       return;
-     }
-     if(id=='granny'){
-       if(h=='guitar') npc('granny','Эххх. А дед то молодой когда был, романсы мне пел. Не береди душу бабушке инструментом.');
-       else if(h=='cigarette') npc('granny','Ты что, милок? Убери эту гадость от меня!');
-       else if(h=='texts') npc('granny','Стихи - это хорошо. Дед мне писал когда-то их. Милая моя, радость дорогая... Эххх.');
-       else say(NOPE);
-       return;
-     }
-     if(id=='guy'){
-       if(h=='guitar'){ say('Зачем ему аналоговая музыка, у него своя, цифровая.', 650, 100); return; }
-       if(h=='cigarette'){
-         if(!S.guySmoked){ S.inv.splice(S.inv.indexOf('cigarette'),1); S.guySmoked=true; beep(); npc('guy','Спасибо за сигарету! День сегодня не ахти. Денег нет даже на пачку сигарет. Ещё и наушники сломались.'); }
-         return;
-       }
-       if(h=='texts'){ if(!S.guySmoked) say(noHead, 650, 100); else npc('guy','Неплохие стихи, кстати.'); return; }
-       if(h=='mediator'){
-         if(!S.guySmoked) say(noHead, 650, 100);
-         else if(!S.hpFixed){ npc('guy','У тебя что, есть инструмент для ремонта?'); openHP(); }
-         else npc('guy','Спасибо, дальше они уже работают.');
-         return;
-       }
-       say(NOPE); return;
-     }
-   }
-   if(S.scene=='l3'){
-     if(id=='figure'){
-       if(h=='cleanbottle'){ S.inv.splice(S.inv.indexOf('cleanbottle'),1);S.placed=1;beep(); say('Покойся с миром, дед Родион. Надеюсь, там ты рад, что почтили твою память твоим любимым напитком.', S.px - 50, 100); return; }
-       if(h=='dirtbottle'){ say('Дед конечно особой чистоплотностью не обладал. Но ставить в память ему грязную бутылку верх цинизма.', S.px - 50, 100); return; }
-     }
-     if(id=='drips' && h=='hanky'){ say('Кап-кап, до утра подождём.', S.px - 50, 100); return; }
-     if(id=='puddle' && h=='hanky'){ S.inv[S.inv.indexOf('hanky')]='wethanky'; say('Отлично. Платок увлажнён.', S.px - 50, 100); return; }
-   }
-   if(S.scene=='l2'){ if(id=='door' && h=='key'){ say('Ключ подходит. Но зачем мне обратно?', S.px - 50, 100); return; } }
-
-   if(S.scene=='l7'){
-     if(id=='conductor'){
-       if(h=='rub5'){
-         if(S.busPaid){say('Кондуктор: "Проезд уже оплачен."', 800, 80);return}
-         if(S.rub<25){
-           say(S.concertDone?'Кондуктор: "Ты хорошо сыграл. Но проезд всё равно стоит 25 рублей."':'Кондуктор: "Этого мало! Проезд стоит 25 рублей!"', 800, 80);
-           return;
-         }
-         S.rub-=25;
-         if(S.rub<=0){ S.rub=0; const idx=S.inv.indexOf('rub5'); if(idx>=0)S.inv.splice(idx,1); }
-         S.busPaid=true;
-         S.needSeat=true;
-         beep();
-         say('Кондуктор: "Ну вот! Заплатил за проезд и живи спокойно!"', 800, 80);
-         S.queue.push({t:'Ох. Присесть бы.',cx:S.px-50,cy:100});
-         return;
-       }
-       if(h=='matches'){say('Кондуктор: "Хулиганство решил задумать?!"', 800, 80);return}
-       if(h=='texts'){say('Кондуктор: "Это не похоже на деньги? Фальшивомонетчик чтоль?"', 800, 80);return}
-       say(NOPE, 800, 80);return;
-     }
-     if(id=='womanRed'){
-       if(h=='rub5'){say('Женщина в красном: "Тебе нужнее!"', 320, 100);return}
-       if(h=='matches'){say('Женщина в красном: "Спасибо, мне не нужно."', 320, 100);return}
-       if(h=='texts'){say('Женщина в красном: *качает головой*', 320, 100);return}
-       say(NOPE, 320, 100);return;
-     }
-     if(id=='oldMan'){
-       if(h=='rub5'){say('Дед: "Тебе нужнее!"', 520, 100);return}
-       if(h=='matches'){say('Дед молча отмахнулся.', 520, 100);return}
-       if(h=='texts'){say('Дед: "Любовь-морковь, ну и рифмы у тебя, тьфу."', 520, 100);return}
-       say(NOPE, 520, 100);return;
-     }
-     if(id=='man'){ if(h=='rub5')say('Самозабвенно переписывается в национальном месенджере.', 50, 100); else say(NOPE, 50, 100); return; }
-     if(id=='sleepingAunt'){ if(h=='rub5')say('Человек мирно дремлет на заднем сиденье. Ни к чему будить...', 830, 100); else say(NOPE, 830, 100); return; }
-   }
- }
-
- if(self){ say(h=='hanky'?'Спасибо. Утёр пот. Вроде вечер, а жарковатая осень нынче.':SELF[h]||NOPE, S.px - 50, 100); return; }
- say(NOPE, S.px - 50, 100);
-}
-
-function zoneClick(z){
- const id=z.id;
- if(id=='door'){say('Дверь заперта... мной.', S.px - 50, 100);return}
- if(id=='tunnel'){ fadeTo(startL3); return; }
- if(id=='figure'){
-     if(S.placed) say('Покойся с миром, дед Родион.', S.px - 50, 100);
-     else say('Дед Родион вчера схлопотал сердечный. Забавный дед был. Постоянно выпивку клянчил. Почесть бы его память.', S.px - 50, 100);
-     return;
- }
-
- if(S.scene=='back6left' && id=='dog'){
-   dogBark.currentTime=0;dogBark.play().catch(()=>{});
-   say('Злая собака нам не товарищ, дальше не пропустит');
-   return;
- }
-
- if(S.scene=='l7'){
-   if(S.needSeat&&id.startsWith('seat')){
-     S.needSeat=false;
-     say('Ох. Присесть бы.', S.px - 50, 100);
-     fadeTo(()=>{S.scene='l7end';theme2.pause();busSnd.pause();});
-     return;
-   }
-   if(id=='conductor'){
-     if(S.busPaid){say('Кондуктор: "Проезд оплачен, езжайте спокойно."', 800, 80);return}
-     S.conductorClicks++;
-     if(S.conductorClicks===1){
-       say('Кондуктор: "Какая договорённость? Какая старушка с остановки? Никто мне ничего не говорил!"', 800, 80);
-     }else{
-       say('Кондуктор: "Молодой человек! Оплачиваем проезд — 25 рублей — или на следующей остановке вас встретит милиция!"', 800, 80);
-       S.queue.push({t:'Нехорошая ситуация! Надо что-то придумывать и срочно...',cx:S.px-50,cy:100});
-     }
-     return;
-   }
-   if(id=='man'){
-     if(S.concertDone&&!S.busGivers.man)giveRub('man','Мужчина: "Даже я отвлёкся от переписки. Держи пятёрку."', 50, 100);
-     else if(S.concertPlaying)say('Мужчина: "Погоди, дай послушать."', 50, 100);
-     else if(S.concertDone)say('Мужчина: "Классная песня. Заслушался, даже переписку бросил."', 50, 100);
-     else say('Самозабвенно переписывается в национальном месенджере.', 50, 100);
-     return;
-   }
-   if(id=='womanRed'){
-     if(S.concertDone&&!S.busGivers.womanRed)giveRub('womanRed','Женщина в красном: "Аж на душе теплее стало. Держи, милок."', 320, 100);
-     else if(S.concertPlaying)say('Женщина в красном: "Тише, слушаю."', 320, 100);
-     else if(S.concertDone)say('Женщина в красном: "Спасибо за музыку, милок. Такой вечер скрасил."', 320, 100);
-     else say('Женщина в красном: "Как ты так умудрился в автобус и без денег сесть?"', 320, 100);
-     return;
-   }
-   if(id=='oldMan'){
-     if(S.concertDone&&!S.busGivers.oldMan)giveRub('oldMan','Дед: "Вот это по-нашему! Держи, молодёжь."', 520, 100);
-     else if(S.concertPlaying)say('Дед: "Не мешай слушать."', 520, 100);
-     else if(S.concertDone)say('Дед: "Хорошо играешь, парень. Не зря учился."', 520, 100);
-     else say('Дед: "До чего молодёжь нынче пошла. Я в вашем возрасте работал не покладая рук и деньги водились."', 520, 100);
-     return;
-   }
-   if(id=='sleepingAunt'){
-     if(S.concertDone&&!S.busGivers.sleepingAunt)giveRub('sleepingAunt','Спящая тётка: "Я не спала. Очень красиво. Вот, возьми."', 830, 100);
-     else if(S.concertPlaying)say('Спящая тётка: "М-м-м... красиво..."', 830, 100);
-     else if(S.concertDone)say('Спящая тётка: "Давно так не слушала. Спасибо тебе, играй ещё."', 830, 100);
-     else say('Человек мирно дремлет на заднем сиденье. Ни к чему будить...', 830, 100);
-     return;
-   }
-   if(id.startsWith('seat')){
-     if(!S.seatMoney){
-       S.seatMoney=true;
-       addRub(1);
-       say('Повезло. Кто-то обронил пятак.', S.px - 50, 100);
-     }else{
-       say('Больше под сиденьем ничего нет.', S.px - 50, 100);
-     }
-     return;
-   }
-   if(z.say){say(z.say, S.px - 50, 100);return}
-   return;
- }
-
- if(S.scene=='l4'){
-   if(id=='screwdriver_ground'){ if(S.found.screwdriver_ground){ S.inv.push('screwdriver'); S.found.screwdriver_ground = false; beep(); say('Подобрал отвертку. Пригодится в хозяйстве.', S.px - 50, 100); } return; }
-   if(id=='men') { say('Дарова Зет. Выручай! Светофор не работает. А пиво уже заканчивается!', 300, 150); return; }
-   if(id=='traffic_light') { say('Что ж, советская техника наконец-то сломалась. Надо поискать, где щиток у светофора.', S.px - 50, 100); return; }
-   if(id=='pole_base') {
-       if(S.screwdriver_broken) { S.puzzleActive = true; beep(); }
-       else { say('Здесь пластина прикручена советскими болтами', S.px - 50, 100); }
-       return;
-   }
- }
-if(S.scene=='l6'){
-   if(id=='man'){ npc('man','Нет, молодой, у меня только на себя на проезд.'); return; }
-   if(id=='granny'){
-     if(S.hpFixed && !S.busReady){
-       npc('granny','Видела я, как ты помог пареньку: и сигаретой угостил, и наушники починил, просто так. Добрый ты, милок. Сейчас смс знакомой кондукторше напишу, она тебя довезёт.');
-       if(!S.queue.length) S.queue.push({t:'Вовремя я дела закончил. А вот и автобус.',fn:()=>{S.busReady=true;beep()}});
-     }
-     else if(S.busReady) npc('granny','Иди, милок, автобус скоро подъедет. Я знакомой кондукторше уже смс написала.');
-     else npc('granny','Внучок, пенсия то маленькая нынче. А мне за хлебом на дальний район ехать. Никак не могу помочь.');
-     return;
-   }
-   if(id=='guy'){
-     if(!S.guySmoked) say('Он в наушниках. Не слышит. Или делает вид что не слышит.', 650, 100);
-     else if(!S.hpFixed) npc('guy','Кто бы мне наушники починил, было бы так здорово. *затянулся сигаретой*');
-     else npc('guy','Музыка снова со мной. Спасибо тебе!');
-     return;
-   }
-   if(id=='bin_stop'){
-     if(!S.found.brokenmediator){ S.found.brokenmediator=1; S.inv.push('brokenmediator'); beep(); say('Что-то зачастил я с заглядыванием в мусорки. Ну ладно, это в последний раз.', 130, 100); }
-     else say('Больше там ничего интересного. Только мусор.', 130, 100);
-     return;
-   }
- }
- if(S.scene=='l5'){
-   if(id=='men') { say('Спасибо Зет! Спас нас от «засухи»!', 300, 150); return; }
-   if(id=='pole_base') { S.puzzleActive = true; beep(); return; }
-   if(id=='traffic_light') { say('Тем и хороши старые технологии - они ремонтопригодные', S.px - 50, 100); return; }
- }
-
- const F={bin:['dirtbottle','Недопитая вчера бутылка джина. Я уронил её в грязь и выбросил.'],bench:['hanky','Кусок почти чистой ткани. Кто-то здесь вытирал слёзы платком.'],bin3:['basbook','Ужасно. Выбросили книгу. Собрание рассказов «Система Безопасности Раздела» Е.В. Бассуров']}[id];
- if(F){if(!S.found[F[0]]){S.found[F[0]]=1;S.inv.push(F[0]);beep();say(F[1], S.px - 50, 100)}return}
-
- say(z.say, S.px - 50, 100)
-}
-
-function click(x,y){
- if(S.scene=='splash'){S.scene='menu';return}
- if(S.dbg){dbgClick(x,y);return}
- if(S.scene=='menu'){if(x>362&&x<790&&y>675&&y<790)fadeTo(startL1);return}
- if(S.scene=='l7end'){fadeTo(startBack6Mid);return}
- const panel=y>745;
-
- if(panel){
-     const i=SX.findIndex(s=>Math.abs(x-s)<52);
-     if(i>=0&&Math.abs(y-SY)<52){
-         const item = S.inv[i];
-         if (S.held) {
-             if (item && item !== S.held) { combine(S.held, item); S.held = null; }
-             else { S.held = null; }
-         } else if (item) { S.held = item; }
-     }
-     return;
- }
-
- if(S.held&&S.scene!='l1'){const h=S.held;S.held=null;useItem(h,x,y);return}
- if(S.held){say(NOPE, S.px - 50, 100);S.held=null;return}
-
- if(S.scene=='l1'){
-  if(x>1040&&x<1130&&y>672&&y<728){
-   if(['cigarette','matches','texts','key'].every(k=>S.found[k]))fadeTo(startL2);
-   else say('Не стоит покидать дом с минимальным снаряжением.', 690, 120);
-   return}
-  for(const [id,hx,hy,r,t] of HOTSPOTS)if(Math.hypot(x-hx,y-hy)<r){
-   if(!S.found[id]){S.found[id]=1;S.inv.push(id);beep();say(t, 690, 120)}
-   return}
- } else if(S.scene=='l6') {
-   if(y>672&&y<728&&x>25&&x<115){ fadeTo(()=>startL5(1080)); return; }
-   if(S.busReady&&y>672&&y<728&&x>1040&&x<1130){ fadeTo(startL7); return; }
-   const z=hit(H6,x,y); if(z){zoneClick(z);return}
-   S.tx=Math.max(70,Math.min(1080,x));
- } else if(S.scene=='l7'){
-   if (Math.abs(x - S.px) < 120 && y > 250 && y < 760) { S.tx=Math.max(70,Math.min(1080,x)); return; }
-   const z=hit(H7,x,y);
-   if(z){zoneClick(z);return}
-   S.tx=Math.max(70,Math.min(1080,x));
- } else if(S.scene=='back6mid' || S.scene=='back6left' || S.scene=='back6right'){
-   // Навигация: остановка в центре, гаражи слева, магазины справа.
-   // Из гаражей только назад (вправо). Из магазинов только назад (влево).
-   if(S.scene=='back6mid'){
-     if(x>25&&x<115&&y>672&&y<728){ fadeTo(startBack6Left); return; } // в гаражи
-     if(x>1040&&x<1130&&y>672&&y<728){ fadeTo(startBack6Right); return; } // в магазины
-   } else if(S.scene=='back6left'){
-     if(x>1040&&x<1130&&y>672&&y<728){ fadeTo(startBack6Mid); return; } // назад на остановку
-     // левая стрелка неактивна
-   } else if(S.scene=='back6right'){
-     if(x>25&&x<115&&y>672&&y<728){ fadeTo(startBack6Mid); return; } // назад на остановку
-     // правая стрелка неактивна
-   }
-   const list = {back6left:HB6L, back6mid:HB6M, back6right:HB6R}[S.scene];
-   const z=hit(list,x,y);
-   if(z){zoneClick(z);return}
- } else if(S.scene=='l4' || S.scene=='l5') {
-   if(x>25&&x<115&&y>672&&y<728){
-       if(S.scene=='l4') { fadeTo(()=>{startL3(1080)}); }
-       return;
-   }
-   if(x>1040&&x<1130&&y>672&&y<728){
-     if(S.scene=='l5') { fadeTo(startL6); }
-     else say('Куда я пойду? Мне еще нужно разобраться со светофором.', S.px - 50, 100);
-     return;
-   }
-   const z = S.scene=='l4' ? hit4(x,y) : hit5(x,y);
-   if(z){zoneClick(z);return}
-   if(S.scene=='l4') S.tx=Math.max(70,Math.min(1080,x));
- } else {
-  if(S.scene=='l3'&&y>672&&y<728){
-   if(x>25&&x<115){fadeTo(()=>startL2(930));return}
-   if(x>1040&&x<1130){
-       if(S.placed) { initPuzzle(); fadeTo(startL4); }
-       else { say('У меня есть стойкое ощущение что я что-то не сделал.', S.px - 50, 100); S.tx = 450; }
-       return;
-   }}
-  const z=hit(S.scene=='l2'?H2:H3,x,y);if(z){zoneClick(z);return}
-  const maxX = (S.scene=='l3' && !S.placed) ? 450 : 1080;
-  S.tx=Math.max(70,Math.min(maxX,x));
- }
-}
-
-const P_SIZE = 75;
-const P_OX = 40;
-const P_OY = 20;
-
-function getConns(t, r) {
-    if (t===1) return [r%2===0?['L','R']:['U','D']][0];
-    if (t===2) return [['U','R'],['R','D'],['D','L'],['L','U']][r%4];
-    if (t===3) return [['L','R','U'],['U','D','R'],['L','R','D'],['U','D','L']][r%4];
-    if (t===4) return ['L','R','U','D'];
-    if (t===5) return ['R'];
-    if (t===6) return ['R'];
-    if (t===8) return S.key_in_puzzle ? ['U','L','R'] : [];
-    return [];
-}
-
-function checkPuzzle() {
-    const visited = new Set();
-    const q = [[0, 0]];
-    visited.add('0,0');
-    let isSolved = false;
-    let current = 0;
-    const dirs = { 'U': [0, -1, 'D'], 'D': [0, 1, 'U'], 'L': [-1, 0, 'R'], 'R': [1, 0, 'L'] };
-
-    while(current < q.length) {
-        const [cx, cy] = q[current++];
-        if (cx === 0 && cy === 8) isSolved = true;
-        const cell = puzzleGrid[cy][cx];
-        if(!cell) continue;
-        const conns = getConns(cell.t, cell.r);
-        for (let c of conns) {
-            const nx = cx + dirs[c][0], ny = cy + dirs[c][1];
-            if (nx >= 0 && nx < 9 && ny >= 0 && ny < 9 && !visited.has(`${nx},${ny}`)) {
-                const nCell = puzzleGrid[ny][nx];
-                if(!nCell) continue;
-                const nConns = getConns(nCell.t, nCell.r);
-                if (nConns.includes(dirs[c][2])) {
-                    visited.add(`${nx},${ny}`);
-                    q.push([nx, ny]);
-                }
-            }
-        }
+    g.save();
+    g.globalAlpha = 0.22;
+    g.strokeStyle = '#8a6940';
+    g.lineWidth = 2;
+    for (let y = 18; y < 735; y += 47) {
+      g.beginPath(); g.moveTo(0, y); g.lineTo(1152, y + Math.sin(y) * 3); g.stroke();
     }
-    return { solved: isSolved, powered: visited };
-}
-
-function clickPuzzle(x, y) {
-    if (x > 40 && x < 140 && y > 715 && y < 745) {
-        S.puzzleActive = false;
-        if (S.scene === 'l4' && S.puzzleSolved) { startL5(S.px); }
-        else if (S.scene === 'l5' && !S.puzzleSolved) { startL4(S.px); }
-        return;
+    for (let x = 35; x < 1152; x += 190) {
+      g.beginPath(); g.moveTo(x, 0); g.lineTo(x + 8, 745); g.stroke();
     }
-    const cx = Math.floor((x - P_OX) / P_SIZE);
-    const cy = Math.floor((y - P_OY) / P_SIZE);
-    if (cx < 0 || cx >= 9 || cy < 0 || cy >= 9) return;
-    const cell = puzzleGrid[cy][cx];
-    if (cell.t === 8) {
-        if (S.key_in_puzzle) {
-            S.key_in_puzzle = false; S.inv.push('key'); beep();
-            say('Забрал ключ. Цепь разомкнута.', x - 150, y - 150);
-            const res = checkPuzzle();
-            if (S.puzzleSolved && !res.solved) S.puzzleSolved = false;
-        } else if (S.held === 'key') {
-            S.inv.splice(S.inv.indexOf('key'), 1); S.held = null; S.key_in_puzzle = true; beep();
-            say('Вот теперь контакт есть. На обратном пути заберу.', x - 150, y - 150);
-            const res = checkPuzzle();
-            if (res.solved && !S.puzzleSolved) {
-                S.puzzleSolved = true;
-                say('Цепь замкнута! Светофор снова работает. Нажмите ВЫХОД.', x - 150, y - 150);
-            }
-        } else { say('Здесь выгорели провода. Нужна перемычка.', x - 150, y - 150); }
-        return;
-    }
-    if ([1,2,3,4].includes(cell.t)) {
-        cell.r = (cell.r + 1) % 4; beep();
-        const res = checkPuzzle();
-        if (res.solved && !S.puzzleSolved) {
-            S.puzzleSolved = true;
-            say('Цепь замкнута! Светофор снова работает. Нажмите ВЫХОД.', x - 150, y - 150);
-        } else if (!res.solved && S.puzzleSolved) {
-            S.puzzleSolved = false;
-            say('Светофор погас. Похоже, я что-то не так подключил.', x - 150, y - 150);
-        }
-    }
-}
-
-function drawPuzzle() {
-    g.save(); g.beginPath(); g.rect(0, 0, W, 745); g.clip();
-    g.fillStyle = '#000'; g.fillRect(0, 0, W, 745);
-    if (IMG.puzzle_bg && IMG.puzzle_bg.width > 0) g.drawImage(IMG.puzzle_bg, 0, 0, W, 745);
-    const result = checkPuzzle();
-    for (let y = 0; y < 9; y++) {
-        for (let x = 0; x < 9; x++) {
-            const cell = puzzleGrid[y][x];
-            if(!cell) continue;
-            const px = P_OX + x * P_SIZE + P_SIZE/2;
-            const py = P_OY + y * P_SIZE + P_SIZE/2;
-            g.save(); g.translate(px, py); g.rotate(cell.r * Math.PI / 2);
-            g.lineWidth = 8; g.lineCap = 'round';
-            const isPowered = result.powered.has(`${x},${y}`);
-            g.strokeStyle = isPowered ? '#ffaa00' : '#4fa8e8';
-            if (isPowered) { g.shadowColor = '#ffaa00'; g.shadowBlur = 10; }
-            else { g.shadowColor = '#4fa8e8'; g.shadowBlur = 5; }
-            g.beginPath();
-            if (cell.t === 1) { g.moveTo(-P_SIZE/2, 0); g.lineTo(P_SIZE/2, 0); }
-            else if (cell.t === 2) { g.moveTo(0, -P_SIZE/2); g.lineTo(0, 0); g.lineTo(P_SIZE/2, 0); }
-            else if (cell.t === 3) { g.moveTo(-P_SIZE/2, 0); g.lineTo(P_SIZE/2, 0); g.moveTo(0, 0); g.lineTo(0, -P_SIZE/2); }
-            else if (cell.t === 4) { g.moveTo(-P_SIZE/2, 0); g.lineTo(P_SIZE/2, 0); g.moveTo(0, -P_SIZE/2); g.lineTo(0, P_SIZE/2); }
-            else if (cell.t === 5) { g.moveTo(0, 0); g.lineTo(P_SIZE/2, 0); g.fillStyle = '#ffaa00'; g.arc(0, 0, 15, 0, Math.PI*2); g.fill(); }
-            else if (cell.t === 6) { g.moveTo(0, 0); g.lineTo(P_SIZE/2, 0); g.fillStyle = '#00ff00'; g.arc(0, 0, 15, 0, Math.PI*2); g.fill(); }
-            else if (cell.t === 8) {
-                g.strokeStyle = (S.key_in_puzzle && isPowered) ? '#ffaa00' : '#555';
-                g.shadowBlur = (S.key_in_puzzle && isPowered) ? 10 : 0;
-                g.moveTo(-P_SIZE/2, 0); g.lineTo(P_SIZE/2, 0);
-                g.moveTo(0, 0); g.lineTo(0, -P_SIZE/2);
-            }
-            g.stroke();
-            g.restore();
-        }
-    }
-    if (S.key_in_puzzle) {
-        const kx = P_OX + 2 * P_SIZE;
-        const ky = P_OY + 8 * P_SIZE + P_SIZE/2;
-        g.save(); g.translate(kx, ky); g.rotate(Math.PI/4); icon('key', 0, 0, 160); g.restore();
-    }
-    g.fillStyle = '#331f1f'; g.fillRect(40, 715, 100, 30); g.strokeStyle = '#e6cd96'; g.lineWidth = 2; g.strokeRect(40, 715, 100, 30);
-    g.fillStyle = '#e6cd96'; g.font = '24px "Amatic SC"'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('ВЫХОД', 90, 730);
-    g.textAlign = 'left'; g.textBaseline = 'top';
     g.restore();
-}
-
-const HP_EDGES=[[0,1],[1,2],[3,4],[4,5],[6,7],[7,8],[0,3],[3,6],[1,4],[4,7],[2,5],[5,8],[0,4],[4,8],[1,5],[9,0],[9,1],[9,4]];
-const HP_COL=['#d9534f','#4fa8e8','#5cb85c','#e6c84f','#c77dff','#ff9e5e'];
-function segX(a,b,c,d){const o=(p,q,r)=>Math.sign((q.x-p.x)*(r.y-p.y)-(q.y-p.y)*(r.x-p.x));return o(a,b,c)*o(a,b,d)<0&&o(c,d,a)*o(c,d,b)<0}
-function hpCross(){
- const n=S.hp.nodes,E=S.hp.edges,bad=new Set();let c=0;
- for(let i=0;i<E.length;i++)for(let j=i+1;j<E.length;j++){
-  const [a,b]=E[i],[cc,d]=E[j];if(a==cc||a==d||b==cc||b==d)continue;
-  if(segX(n[a],n[b],n[cc],n[d])){c++;bad.add(i);bad.add(j)}}
- return {c,bad}}
-function initHP(){
- let seed=11;const rnd=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
- let nodes;
- for(let k=0;k<400;k++){
-  nodes=[];
-  for(let i=0;i<10;i++)nodes.push({x:260+rnd()*640,y:140+rnd()*500,pin:null});
-  nodes[0]={x:150,y:390,pin:'ВХОД'};nodes[8]={x:1000,y:390,pin:'ДИНАМИК'};
-  let ok=true;
-  for(let i=0;i<10&&ok;i++)for(let j=i+1;j<10;j++)if(Math.hypot(nodes[i].x-nodes[j].x,nodes[i].y-nodes[j].y)<85){ok=false;break}
-  if(!ok)continue;
-  S.hp={nodes,edges:HP_EDGES.map((e,i)=>[e[0],e[1],HP_COL[i%6]]),solved:false};
-  if(hpCross().c>=9)return;
- }
- S.hp={nodes,edges:HP_EDGES.map((e,i)=>[e[0],e[1],HP_COL[i%6]]),solved:false};
-}
-function openHP(){if(!S.hp)initHP();S.puzzleActive=true;S.puzzleKind='hp';S.hpDrag=null}
-function hpDown(x,y){
- if(x>40&&x<140&&y>715&&y<745){
-  S.puzzleActive=false;S.puzzleKind=null;S.hpDrag=null;
-  if(S.hp.solved&&!S.hpFixed){S.hpFixed=true;beep();npc('guy','Работает! Музыка снова со мной. Спасибо тебе!')}
-  return}
- let best=-1,bd=34;
- S.hp.nodes.forEach((n,i)=>{if(n.pin)return;const d=Math.hypot(n.x-x,n.y-y);if(d<bd){bd=d;best=i}});
- if(best>=0)S.hpDrag=best;
-}
-function hpMove(){
- if(S.hpDrag==null||!S.puzzleActive||S.puzzleKind!=='hp')return;
- const n=S.hp.nodes[S.hpDrag];n.x=Math.max(60,Math.min(1090,S.mx));n.y=Math.max(110,Math.min(690,S.my));
-}
-function hpUp(){
- if(S.hpDrag==null)return;S.hpDrag=null;
- const r=hpCross();
- if(r.c===0&&!S.hp.solved){S.hp.solved=true;beep();say('Провода больше не пересекаются. Цепь замкнута. Можно закрывать корпус.', W/2 - 150, 100)}
- else if(r.c>0&&S.hp.solved){S.hp.solved=false;say('Опять где-то замкнуло.', W/2 - 150, 100)}
-}
-function drawHP(){
- const r=hpCross(),n=S.hp.nodes,E=S.hp.edges;
- g.save();g.beginPath();g.rect(0,0,W,745);g.clip();
- g.fillStyle='#10201a';g.fillRect(0,0,W,745);
- g.strokeStyle='#1d3a2c';g.lineWidth=1;
- for(let x=0;x<W;x+=40){g.beginPath();g.moveTo(x,0);g.lineTo(x,745);g.stroke()}
- for(let y=0;y<745;y+=40){g.beginPath();g.moveTo(0,y);g.lineTo(W,y);g.stroke()}
- g.strokeStyle='#e6cd96';g.lineWidth=4;g.strokeRect(20,20,W-40,705);
- g.font='42px "Amatic SC"';g.fillStyle='#e6cd96';g.textAlign='center';g.textBaseline='middle';
- g.fillText('Наушники: разведи провода так, чтобы они нигде не пересекались',W/2,62);
- g.lineCap='round';
- E.forEach((e,i)=>{
-  const a=n[e[0]],b=n[e[1]];
-  g.lineWidth=7;
-  if(S.hp.solved){g.strokeStyle='#ffaa00';g.shadowColor='#ffaa00';g.shadowBlur=10}
-  else{g.strokeStyle=r.bad.has(i)?'#ff3b3b':e[2];g.shadowColor=g.strokeStyle;g.shadowBlur=r.bad.has(i)?8:3}
-  g.beginPath();g.moveTo(a.x,a.y);g.lineTo(b.x,b.y);g.stroke();
- });
- g.shadowBlur=0;
- n.forEach((p,i)=>{
-  if(p.pin){
-   g.fillStyle='#331f1f';g.strokeStyle='#e6cd96';g.lineWidth=3;
-   g.beginPath();g.rect(p.x-58,p.y-28,116,56);g.fill();g.stroke();
-   g.fillStyle=S.hp.solved?'#ffaa00':'#e6cd96';g.font='30px "Amatic SC"';g.fillText(p.pin,p.x,p.y);
-  }else{
-   g.fillStyle=(S.hpDrag===i)?'#fff2b0':'#c9a14a';g.strokeStyle='#2a2010';g.lineWidth=3;
-   g.beginPath();g.arc(p.x,p.y,17,0,Math.PI*2);g.fill();g.stroke();
-   g.fillStyle='#2a2010';g.beginPath();g.arc(p.x,p.y,5,0,Math.PI*2);g.fill();
-  }
- });
- g.font='34px "Amatic SC"';g.fillStyle=S.hp.solved?'#ffaa00':'#e6cd96';
- g.fillText(S.hp.solved?'Сигнал есть! Нажмите ВЫХОД':'Пересечений: '+r.c,W/2,700);
- g.fillStyle='#331f1f';g.fillRect(40,715,100,30);g.strokeStyle='#e6cd96';g.lineWidth=2;g.strokeRect(40,715,100,30);
- g.fillStyle='#e6cd96';g.font='24px "Amatic SC"';g.fillText('ВЫХОД',90,730);
- g.textAlign='left';g.textBaseline='top';
- g.restore();
-}
-
-const CHORD_BTNS=[{n:'Am',x:220},{n:'F',x:390},{n:'C',x:560},{n:'E',x:730}];
-
-function updateChord(dt){
- const c=S.chord;
- if(!c||c.solved)return;
- c.time+=dt;
- const interval=Math.max(.55,1.15-c.score*.035);
- const speed=220+c.score*14;
- if(c.time-c.lastSpawn>interval){
-   c.lastSpawn=c.time;
-   c.notes.push({type:c.seq[Math.floor(Math.random()*4)],x:W+60,hit:false});
- }
- for(const n of c.notes)n.x-=speed*dt;
- c.notes=c.notes.filter(n=>n.x>-100);
-}
-
-function clickChord(x,y){
- const c=S.chord;
- if(!c)return;
- if(x>40&&x<140&&y>715&&y<745){
-   if(c.solved)startLetov();
-   else{
-     S.puzzleActive=false; S.puzzleKind=null; S.chord=null;
-     theme2.volume=.7; tsoy.pause();
-     say('Так, надо ещё подготовиться...', S.px - 50, 100);
-   }
-   return;
- }
- if(c.solved)return;
- for(const b of CHORD_BTNS){
-   if(x>b.x-65&&x<b.x+65&&y>620&&y<700){
-     const noteHalf=45;
-     const inZone=c.notes.find(n=>!n.hit&&n.x+noteHalf>310&&n.x-noteHalf<410);
-     if(inZone&&inZone.type===b.n&&b.n===c.seq[c.target]){
-       inZone.hit=true;
-       c.notes=c.notes.filter(n=>n!==inZone);
-       c.score++; c.target=(c.target+1)%4; c.feedback='+1';
-       playChordSound(b.n);
-       if(c.score>=16){ c.solved=true; S.chordSolved=true; say('Вспомнил!', W/2 - 150, 100); }
-     }else{
-       c.score=0; c.target=0; c.notes=[]; c.lastSpawn=c.time; c.feedback='Ошибка!';
-       playErrorSound();
-     }
-     return;
-   }
- }
-}
-
-function drawChordPuzzle(){
- const c=S.chord;
- if(!c)return;
- g.save(); g.beginPath(); g.rect(0,0,W,745); g.clip();
- g.fillStyle='rgba(0,0,0,.82)'; g.fillRect(0,0,W,745);
- g.strokeStyle='#e6cd96'; g.lineWidth=3; g.strokeRect(20,20,W-40,705);
- g.fillStyle='#e6cd96'; g.font='42px "Amatic SC"'; g.textAlign='center'; g.textBaseline='middle';
- g.fillText('Подбери народную мелодию: Am → F → C → E',W/2,60);
- g.font='32px "Amatic SC"';
- g.fillText('Очки: '+c.score+' / 16',W/2,110);
- const seqY=160;
- c.seq.forEach((s,i)=>{
-   const sx=W/2-180+i*120;
-   g.fillStyle=(i===c.target)?'#ffaa00':'#331f1f';
-   g.strokeStyle='#e6cd96'; g.lineWidth=2;
-   g.beginPath(); g.rect(sx-45,seqY-25,90,50); g.fill(); g.stroke();
-   g.fillStyle=(i===c.target)?'#2a2010':'#e6cd96'; g.font='32px "Amatic SC"';
-   g.fillText(s,sx,seqY);
- });
- g.strokeStyle='#e6cd96'; g.lineWidth=2;
- g.beginPath(); g.moveTo(80,520); g.lineTo(W-80,520); g.stroke();
- g.strokeStyle='#ffaa00'; g.lineWidth=4;
- g.strokeRect(310,460,100,90);
- g.fillStyle='rgba(255,170,0,.12)'; g.fillRect(310,460,100,90);
- c.notes.forEach(n=>{
-   if(n.hit)return;
-   g.fillStyle='#331f1f'; g.strokeStyle='#e6cd96'; g.lineWidth=3;
-   g.beginPath(); g.rect(n.x-45,480,90,70); g.fill(); g.stroke();
-   g.fillStyle='#e6cd96'; g.font='40px "Amatic SC"'; g.fillText(n.type,n.x,515);
- });
- CHORD_BTNS.forEach(b=>{
-   g.fillStyle='#331f1f'; g.strokeStyle='#e6cd96'; g.lineWidth=3;
-   g.beginPath(); g.rect(b.x-65,620,130,80); g.fill(); g.stroke();
-   g.fillStyle='#e6cd96'; g.font='34px "Amatic SC"'; g.fillText(b.n,b.x,660);
- });
- if(c.feedback){ g.fillStyle='#ffaa00'; g.font='30px "Amatic SC"'; g.fillText(c.feedback,W/2,590); }
- g.fillStyle='#331f1f'; g.fillRect(40,715,100,30); g.strokeStyle='#e6cd96'; g.lineWidth=2; g.strokeRect(40,715,100,30);
- g.fillStyle='#e6cd96'; g.font='24px "Amatic SC"'; g.fillText('ВЫХОД',90,730);
- g.textAlign='left'; g.textBaseline='top';
- g.restore();
-}
-
-function wrap(t,mw){
-const w=t.split(' ');const L=[];let c='';for(const x of w){const n=c?c+' '+x:x;if(g.measureText(n).width>mw&&c){L.push(c);c=x}else c=n}L.push(c);return L}
-function arrow(cx,cy,d,t){g.save();g.globalAlpha=.75+.25*Math.sin(t/300);g.fillStyle='#e6cd96';g.strokeStyle='#2a2010';g.lineWidth=3;g.beginPath();[[-45,-12],[5,-12],[5,-28],[45,0],[5,28],[5,12],[-45,12]].forEach(([a,b],i)=>i?g.lineTo(cx+a*d,cy+b):g.moveTo(cx+a*d,cy+b));g.closePath();g.fill();g.stroke();g.restore()}
-function drawPick(id,x,y,h){
- g.save();g.translate(x,y);const r=h*.3;g.fillStyle='#d8c9a0';g.strokeStyle='#2a2010';g.lineWidth=3;g.beginPath();
- if(id=='mediator'){g.moveTo(-r,-r*.8);g.quadraticCurveTo(0,-r*1.1,r,-r*.8);g.quadraticCurveTo(r*.9,r*.5,0,r*1.1);g.quadraticCurveTo(-r*.9,r*.5,-r,-r*.8)}
- else{g.moveTo(-r,-r*.8);g.quadraticCurveTo(0,-r*1.1,r*.9,-r*.6);g.lineTo(r*.2,0);g.quadraticCurveTo(r*1.1,r*.5,r*.2,r*1.1);g.quadraticCurveTo(-r*.9,r*.5,-r*.5,-r*.2);g.closePath()}
- g.fill();g.stroke();g.restore()}
-function icon(id,x,y,h){
- if((id=='mediator'||id=='brokenmediator')&&!(IMG[id]&&IMG[id].width)){drawPick(id,x,y,h);return}
- if(id=='wethanky'){icon('hanky',x,y,h);const r=h*.13,cx=x+h*.26,cy=y+h*.2;g.save();g.fillStyle='#4fa8e8';g.strokeStyle='#0d2a44';g.lineWidth=2;g.beginPath();g.moveTo(cx,cy-r*2);g.quadraticCurveTo(cx+r*1.5,cy-r*.2,cx+r,cy+r*.4);g.arc(cx,cy+r*.4,r,0,Math.PI);g.quadraticCurveTo(cx-r*1.5,cy-r*.2,cx,cy-r*2);g.fill();g.stroke();g.restore();return}
- if(id==='rub5'&&(!IMG.rub5||!IMG.rub5.width)){
-   g.save();
-   g.fillStyle='#6b8f4e'; g.strokeStyle='#2a2010'; g.lineWidth=3;
-   g.beginPath(); g.rect(x-h*.35,y-h*.2,h*.7,h*.4); g.fill(); g.stroke();
-   g.fillStyle='#f1e2bd'; g.font='28px "Amatic SC"'; g.textAlign='center'; g.textBaseline='middle';
-   g.fillText('5',x,y);
-   g.restore();
-   return;
- }
-const i=IMG[id];if(!i||!i.width)return;const w=h*i.width/i.height;g.drawImage(i,x-w/2,y-h/2,w,h)}
-
-function update(dt){
- if(mv!==mt){mv+=Math.sign(mt-mv)*Math.min(Math.abs(mt-mv),.4*dt);music.volume=mv}
- if(S.fade){const f=S.fade;f.a+=f.ph*dt/.6;if(f.ph==1&&f.a>=1){f.a=1;f.ph=-1;f.cb()}else if(f.ph==-1&&f.a<=0)S.fade=null}
-
- if(S.tsoyPlaying || S.concertPlaying){
-     S.tx = S.px; S.walk = 0;
-     if(!step.paused){step.pause();step.currentTime=0}
- } else if(S.scene.indexOf('back6')===0){
-     S.px = S.tx; S.walk = 0;
-     if(!step.paused){step.pause();step.currentTime=0}
- } else {
-     const d=S.tx-S.px;
-     if(S.scene!='l1'&&Math.abs(d)>3){S.dir=d>0?1:-1;S.px+=S.dir*Math.min(Math.abs(d),170*dt);S.walk+=dt;if(step.paused)step.play().catch(()=>{})}
-     else{S.walk=0;if(!step.paused){step.pause();step.currentTime=0}}
- }
- if(S.puzzleActive&&S.puzzleKind==='chord')updateChord(dt);
-}
-
-function draw(t){
- g.clearRect(0,0,W,H);
- if(S.dbg){drawDbgMenu(t)}
- else if(S.scene=='splash'){g.fillStyle='#000';g.fillRect(0,0,W,H);g.font='60px "Amatic SC"';g.fillStyle='rgba(238,220,180,'+(.55+.45*Math.sin(t/400))+')';g.textAlign='center';g.textBaseline='middle';g.fillText('Нажмите, чтобы начать',W/2,H/2);g.textAlign='left'}
- else if(S.scene=='menu'){drawImageSafe(IMG.logo,0,0,W,H)}
- else{
-  if(S.scene=='l7end'){
-    g.fillStyle='#000'; g.fillRect(0,0,W,H);
-    g.font='60px "Amatic SC"'; g.fillStyle='#e6cd96'; g.textAlign='center'; g.textBaseline='middle';
-    g.fillText('Конец уровня',W/2,H/2-40);
-    g.font='34px "Amatic SC"'; g.fillStyle='rgba(230,205,150,.6)';
-    g.fillText('Нажмите, чтобы продолжить',W/2,H/2+50);
-    g.textAlign='left'; g.textBaseline='top';
-  } else {
-   const firstPerson = S.scene.indexOf('back6')===0;
-   const bg = {l1:IMG.back0,l2:IMG.back1,l3:IMG.back2,l4:IMG.back3,l5:IMG.back3n,l6:IMG.back4,l7:IMG.back5,back6left:IMG.back6left,back6mid:IMG.back6mid,back6right:IMG.back6right}[S.scene];
-   if(bg && bg.width > 0) g.drawImage(bg,0,0,W,H);
-   else { g.fillStyle = '#1a1a1a'; g.fillRect(0,0,W,H); }
-
-   if(S.scene=='l1'){
-    const f=IMG.front;drawImageSafe(f,355,52,f.width*.46,f.height*.46);
-    if(!S.found.key){g.save();g.translate(800,700);g.rotate(-.35);icon('key',0,0,70);g.restore()}
-    g.font='38px "Amatic SC"';g.fillStyle='rgba(238,220,180,.8)';g.textBaseline='top';
-    wrap(HINT,320).forEach((l,i)=>g.fillText(l,60,70+i*34));
-    const p=.75+.25*Math.sin(t/300),cx=1085,cy=700;g.save();g.globalAlpha=p;g.fillStyle='#e6cd96';g.strokeStyle='#2a2010';g.lineWidth=3;
-    g.beginPath();[[-45,-12],[5,-12],[5,-28],[45,0],[5,28],[5,12],[-45,12]].forEach(([a,b],i)=>i?g.lineTo(cx+a,cy+b):g.moveTo(cx+a,cy+b));g.closePath();g.fill();g.stroke();g.restore();
-   } else if(firstPerson){
-     if(S.scene=='back6left'){
-       if(IMG.dog && IMG.dog.width>0) g.drawImage(IMG.dog, DOG.x, DOG.y, DOG.w, DOG.h);
-       arrow(1085,700,1,t); // только назад (вправо)
-     } else if(S.scene=='back6mid'){
-       arrow(70,700,-1,t);  // в гаражи
-       arrow(1085,700,1,t); // в магазины
-     } else if(S.scene=='back6right'){
-       arrow(70,700,-1,t);  // только назад (влево)
-     }
-   } else if(S.scene=='l4') {
-     if(S.found.screwdriver_ground) icon('screwdriver', 365, 695, 40);
-     arrow(70,700,-1,t);
-     const n=Math.floor(S.walk/.33)%2+1, im=IMG[(S.dir>0?'right':'left')+n];
-     if(im && im.width > 0) g.drawImage(im,S.px-111,750-318,222,318);
-   } else if (S.scene=='l6') {
-     arrow(70,700,-1,t); if(S.busReady) arrow(1085,700,1,t);
-     const n=Math.floor(S.walk/.33)%2+1, im=IMG[(S.dir>0?'right':'left')+n];
-     if(im && im.width > 0) g.drawImage(im,S.px-111,750-318,222,318);
-   } else if (S.scene=='l7') {
-     const n=Math.floor(S.walk/.33)%2+1, im=IMG[(S.dir>0?'right':'left')+n];
-     if(im && im.width > 0) {
-        const scale=1.6; const w=222*scale, h=318*scale;
-        g.drawImage(im, S.px-w/2, 760-h, w, h);
-     }
-   } else if (S.scene=='l5') {
-     arrow(1085,700,1,t);
-   } else {
-    const n=Math.floor(S.walk/.33)%2+1, im=IMG[(S.dir>0?'right':'left')+n];
-    if(S.placed&&S.scene=='l3')icon('cleanbottle',480,652,70);
-    if(im && im.width > 0) {
-        const ks=S.scene=='l3'?1.5:1;
-        g.drawImage(im,S.px-111*ks,700-318*ks,222*ks,318*ks);
-    }
-    if(S.scene=='l3'){arrow(70,700,-1,t);arrow(1085,700,1,t)}
-   }
   }
 
-  if(S.puzzleActive){
-    if(S.puzzleKind==='hp')drawHP();
-    else if(S.puzzleKind==='chord')drawChordPuzzle();
-    else drawPuzzle();
-  }
+  function drawLockPlate() {
+    const plate = g.createLinearGradient(cx - 230, cy - 210, cx + 230, cy + 220);
+    plate.addColorStop(0, '#877044');
+    plate.addColorStop(0.22, '#3d3528');
+    plate.addColorStop(0.52, '#201d18');
+    plate.addColorStop(0.82, '#55452e');
+    plate.addColorStop(1, '#17140f');
+    g.fillStyle = '#070605';
+    rounded(cx - 245, cy - 220, 490, 445, 32); g.fill();
+    g.fillStyle = plate;
+    rounded(cx - 235, cy - 215, 470, 430, 28); g.fill();
+    g.strokeStyle = '#b39459'; g.lineWidth = 4;
+    rounded(cx - 226, cy - 206, 452, 412, 23); g.stroke();
+    g.strokeStyle = '#17130d'; g.lineWidth = 2;
+    rounded(cx - 214, cy - 194, 428, 388, 18); g.stroke();
 
-  if(S.scene!=='l7end'){
-    S.inv.forEach((id,i)=>{
-      if(id!==S.held)icon(id,SX[i],SY,84);
-      if(id==='rub5'){
-        g.save();
-        g.font='28px "Amatic SC"'; g.fillStyle='#ffe28a'; g.strokeStyle='#2a2010'; g.lineWidth=4;
-        g.textAlign='center'; g.textBaseline='middle';
-        g.strokeText('x'+Math.floor(S.rub/5),SX[i]+34,SY+30);
-        g.fillText('x'+Math.floor(S.rub/5),SX[i]+34,SY+30);
-        g.restore();
-      }
+    [[cx - 190, cy - 165], [cx + 190, cy - 165], [cx - 190, cy + 165], [cx + 190, cy + 165]].forEach(([x, y]) => {
+      const rg = g.createRadialGradient(x - 3, y - 4, 1, x, y, 12);
+      rg.addColorStop(0, '#d8bd7c'); rg.addColorStop(1, '#47351d');
+      g.fillStyle = rg; g.beginPath(); g.arc(x, y, 11, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = '#17120b'; g.lineWidth = 2; g.stroke();
+      g.beginPath(); g.moveTo(x - 5, y + 4); g.lineTo(x + 5, y - 4); g.stroke();
     });
+
+    const cg = g.createRadialGradient(cx - 25, cy - 35, 8, cx, cy, 105);
+    cg.addColorStop(0, '#b79a60');
+    cg.addColorStop(0.35, '#675331');
+    cg.addColorStop(0.72, '#2b251b');
+    cg.addColorStop(1, '#090807');
+    g.fillStyle = cg; g.beginPath(); g.arc(cx, cy, 106, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = '#c3a66b'; g.lineWidth = 7; g.stroke();
+    g.strokeStyle = '#19140d'; g.lineWidth = 3;
+    g.beginPath(); g.arc(cx, cy, 91, 0, Math.PI * 2); g.stroke();
+
+    const hg = g.createRadialGradient(cx - 8, cy - 12, 2, cx, cy, 65);
+    hg.addColorStop(0, '#090909'); hg.addColorStop(0.7, '#17130e'); hg.addColorStop(1, '#050505');
+    g.fillStyle = hg; g.beginPath(); g.arc(cx, cy, 65, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = '#8c7243'; g.lineWidth = 3; g.stroke();
+
+    g.fillStyle = '#020202';
+    g.beginPath(); g.ellipse(cx, cy - 2, 18, 34, 0, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.arc(cx, cy + 25, 23, 0, Math.PI * 2); g.fill();
+
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillStyle = '#bda16b'; g.font = 'bold 17px Georgia, serif';
+    g.fillText('MECHANICAL LOCK', cx, cy - 166);
+    g.fillStyle = '#74603e'; g.font = '12px Georgia, serif';
+    g.fillText('NO FORCE — FEEL THE CLICK', cx, cy + 178);
+    g.textAlign = 'left'; g.textBaseline = 'alphabetic';
   }
- }
 
- if(S.bubble && S.scene!=='l7end'){
-  let bx = S.bubbleCX !== undefined ? S.bubbleCX : (S.scene=='l1'?690:S.px - 50);
-  let by = S.bubbleCY !== undefined ? S.bubbleCY : (S.scene=='l1'?120:100);
-  bx = Math.max(20, Math.min(W - 320, bx));
-  by = Math.max(20, Math.min(H - 300, by));
+  function drawKey() {
+    const shakeX = near && dragging ? Math.sin(clock * 58) * 2.2 : 0;
+    const shakeY = near && dragging ? Math.cos(clock * 63) * 2.2 : 0;
+    g.save();
+    g.translate(cx + shakeX, cy + shakeY);
+    g.rotate(-angle);
 
-  // Облачко рисуем нормально, хвост смотрит влево (к Зету за экраном)
-  drawImageSafe(IMG.voice,bx,by,300,238);
+    const gold = g.createLinearGradient(-220, -45, 110, 40);
+    gold.addColorStop(0, '#6b4b1f');
+    gold.addColorStop(0.25, '#e1c17a');
+    gold.addColorStop(0.52, '#9a7436');
+    gold.addColorStop(0.78, '#f0d58d');
+    gold.addColorStop(1, '#765222');
 
-  g.font='32px "Amatic SC"';g.fillStyle='#f1e2bd';g.textAlign='center';g.textBaseline='middle';
-  let L=wrap(S.bubble,210),lh=28;if(L.length>5){g.font='26px "Amatic SC"';L=wrap(S.bubble,230);lh=24}
-  L.forEach((l,i)=>g.fillText(l,bx+150,by+100+(i-(L.length-1)/2)*lh));g.textAlign='left';
- }
+    g.fillStyle = '#17120b';
+    rounded(-174, -17, 274, 34, 8); g.fill();
+    g.fillStyle = gold;
+    rounded(-177, -14, 270, 27, 7); g.fill();
+    g.strokeStyle = '#f0d28a'; g.lineWidth = 2; g.stroke();
 
- if(S.held && S.scene!=='l7end')icon(S.held,S.mx+30,S.my+30,72);
+    g.fillStyle = '#6f4d20';
+    g.fillRect(36, 8, 19, 25);
+    g.fillRect(66, 8, 18, 18);
+    g.fillStyle = '#d9b66c';
+    g.fillRect(39, 7, 12, 5);
+    g.fillRect(69, 7, 12, 5);
+    g.fillStyle = gold;
+    rounded(87, -10, 20, 20, 5); g.fill();
 
- if(S.tsoyPlaying || S.concertPlaying){
-    g.font='48px "Amatic SC"'; g.fillStyle='#e6cd96'; g.textAlign='center'; g.textBaseline='middle';
-    g.fillText('Зет играет...', W/2, H - 120);
-    g.textAlign='left'; g.textBaseline='top';
- } else {
-    g.save();g.translate(S.mx,S.my);if(S.down)g.rotate(-.35);drawImageSafe(IMG.cursor,-6,-6,50,50);g.restore();
- }
+    g.lineWidth = 18; g.strokeStyle = '#17120b';
+    g.beginPath(); g.arc(-211, 0, 43, 0, Math.PI * 2); g.stroke();
+    g.lineWidth = 13; g.strokeStyle = gold;
+    g.beginPath(); g.arc(-211, 0, 43, 0, Math.PI * 2); g.stroke();
+    g.lineWidth = 3; g.strokeStyle = '#f2d895';
+    g.beginPath(); g.arc(-211, 0, 35, 0, Math.PI * 2); g.stroke();
+    g.fillStyle = '#18130d'; g.beginPath(); g.arc(-211, 0, 24, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = '#9b783f'; g.lineWidth = 2; g.stroke();
 
- if(S.fade){g.fillStyle='rgba(0,0,0,'+S.fade.a+')';g.fillRect(0,0,W,H)}
+    g.fillStyle = '#f4dda0'; g.beginPath(); g.arc(-211, -42, 4, 0, Math.PI * 2); g.fill();
+    g.restore();
+
+    const hp = handlePos();
+    if (dragging || near) {
+      g.save();
+      g.strokeStyle = near ? '#f2d27a' : '#b99a5e';
+      g.globalAlpha = near ? 0.75 : 0.35;
+      g.lineWidth = near ? 5 : 3;
+      g.beginPath(); g.arc(hp.x, hp.y, 55, 0, Math.PI * 2); g.stroke();
+      g.restore();
+    }
+  }
+
+  function drawTurnArc() {
+    const r = 255;
+    g.save();
+    g.lineCap = 'round';
+    g.strokeStyle = 'rgba(220,190,125,.22)'; g.lineWidth = 7;
+    g.beginPath(); g.arc(cx, cy, r, Math.PI, Math.PI - maxTurn, true); g.stroke();
+    if (angle > 0.005) {
+      g.strokeStyle = near ? '#f2d27a' : '#b99352';
+      g.lineWidth = 8;
+      g.beginPath(); g.arc(cx, cy, r, Math.PI, Math.PI - angle, true); g.stroke();
+    }
+    const mx = cx + r * Math.cos(Math.PI - angle);
+    const my = cy + r * Math.sin(Math.PI - angle);
+    g.fillStyle = near ? '#fff0b0' : '#c5a467';
+    g.beginPath(); g.arc(mx, my, near ? 9 : 6, 0, Math.PI * 2); g.fill();
+    g.restore();
+  }
+
+  function drawProgress() {
+    const y = 590;
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillStyle = '#d6c49d'; g.font = '18px Georgia, serif';
+    g.fillText('ВНУТРЕННИЕ ФИКСАТОРЫ', cx, y - 38);
+    for (let i = 0; i < 3; i++) {
+      const x = cx - 92 + i * 92;
+      const done = i < stage;
+      const active = i === stage && !A.solved();
+      g.save();
+      g.fillStyle = done ? '#d9b66c' : active ? '#57482c' : '#211d17';
+      g.strokeStyle = done ? '#f5d994' : active ? '#c09b58' : '#6f5b39';
+      g.lineWidth = active ? 4 : 2;
+      g.beginPath(); g.arc(x, y, 22, 0, Math.PI * 2); g.fill(); g.stroke();
+      g.fillStyle = done ? '#21190c' : '#d6c49d';
+      g.font = 'bold 17px Georgia, serif';
+      g.fillText(done ? '✓' : String(i + 1), x, y + 1);
+      g.restore();
+    }
+    g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+  }
+
+  function drawMessage() {
+    const solved = A.solved();
+    const text = solved ? 'Замок открылся! Нажми ВЫХОД.' : message;
+    const color = solved ? '#e8ca83' : near ? '#ffe6a0' : '#d5c6a5';
+    g.save();
+    g.fillStyle = 'rgba(5,4,3,.78)';
+    rounded(190, 640, 772, 58, 12); g.fill();
+    g.strokeStyle = near || solved ? '#c4a365' : '#55472f';
+    g.lineWidth = 2; g.stroke();
+    g.fillStyle = color;
+    g.font = solved ? 'bold 23px Georgia, serif' : '20px Georgia, serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(text, cx, 669);
+    g.restore();
+  }
+
+  return {
+    open() {
+      dragging = false;
+      near = false;
+      springBack = false;
+      if (A.solved()) {
+        stage = 3;
+        angle = maxTurn;
+      } else {
+        stage = 0;
+        angle = 0;
+        sayHint('Зажми круглую головку ключа и медленно поверни вниз', 0);
+      }
+    },
+
+    click(x, y) {
+      if (A.solved() || springBack) return;
+      const hp = handlePos();
+      if (Math.hypot(x - hp.x, y - hp.y) <= 68) {
+        dragging = true;
+        near = false;
+        sayHint('Поворачивай медленно. Слушай механизм…', 0);
+      } else {
+        sayHint('Возьмись мышью за круглую головку ключа', 1.8);
+      }
+    },
+
+    move(x, y) {
+      if (!dragging || A.solved()) return;
+      angle = pointerAngle(x, y);
+      const close = Math.abs(angle - target()) <= tolerance();
+      if (close && !near) {
+        tone([740, 980], 'sine', 0.085, 0.075);
+        sayHint('Есть щелчок! Отпусти ключ.', 0);
+      } else if (!close && near) {
+        sayHint('Проскочил… попробуй немного вернуть назад.', 1.4);
+      }
+      near = close;
+    },
+
+    up() {
+      if (!dragging) return;
+      dragging = false;
+      if (A.solved()) return;
+
+      if (Math.abs(angle - target()) <= tolerance()) {
+        stage++;
+        near = false;
+        if (stage >= 3) {
+          angle = maxTurn;
+          springBack = false;
+          tone([523, 659, 784], 'triangle', 0.42, 0.12);
+          sayHint('Щёлк! Ключ провернулся до конца.', 0);
+          A.solve();
+        } else {
+          tone([620, 820], 'triangle', 0.16, 0.09);
+          sayHint(stage === 1 ? 'Первый фиксатор отошёл. Ключ вернулся — ещё два.' : 'Второй фиксатор! Остался последний.', 2.4);
+          springBack = true;
+        }
+      } else {
+        near = false;
+        springBack = true;
+        tone([190], 'sawtooth', 0.13, 0.055, 125);
+        sayHint('Нет… механизм упёрся. Попробуй медленнее.', 2.1);
+      }
+    },
+
+    update(dt) {
+      clock += dt;
+      if (springBack && !dragging) {
+        angle += (0 - angle) * Math.min(1, dt * 9);
+        if (angle < 0.012) {
+          angle = 0;
+          springBack = false;
+        }
+      }
+    },
+
+    draw() {
+      g.save();
+      g.beginPath(); g.rect(0, 0, A.area.w, A.area.h); g.clip();
+      drawBackground();
+      A.frame(p.name || 'Открытие замка');
+      drawLockPlate();
+      drawTurnArc();
+      drawKey();
+      drawProgress();
+      drawMessage();
+
+      if (!A.solved()) {
+        g.fillStyle = '#a99875'; g.font = '15px Georgia, serif';
+        g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.fillText('Удерживай кнопку мыши и веди головку ключа по дуге вниз', cx, 535);
+      }
+      g.restore();
+    },
+
+    close() {
+      dragging = false;
+      springBack = false;
+    }
+  };
 }
+);</script><script>
+'use strict';
+/* ===== Движок квеста: исполняет проект из редактора (LEVELS) ===== */
+const W=1152,H=922,UI_Y=745,SX=[90,195,300,405,510,650,757,865,972],SY=810;
+const cv=document.getElementById('c'),g=cv.getContext('2d');
+const ASSETS=window.ASSETS||{};
+const url=p=>!p?null:/^(data:|blob:|https?:)/.test(p)?p:(ASSETS[p]||p);
+let P=null;
+const M=()=>P.meta;
+const sceneById=id=>P.scenes.find(s=>s.id===id),itemById=id=>P.items.find(i=>i.id===id),whoById=id=>P.speakers.find(s=>s.id===id),puzzleById=id=>P.puzzles.find(s=>s.id===id);
+
+/* ---------- ресурсы ---------- */
+const IMG={};
+function loadImg(p){return new Promise(r=>{if(!p||IMG[p])return r();const i=new Image();IMG[p]=i;i.onload=()=>r();i.onerror=()=>{console.warn('Нет файла',p);r()};i.src=url(p)})}
+const img=p=>{const i=p&&IMG[p];return i&&i.naturalWidth?i:null};
+const AUD={};let loops=new Set(),duck=1;
+function aud(p){if(!p)return null;let a=AUD[p];if(!a){a=new Audio(url(p));AUD[p]=a}return a}
+function setLoops(list){const want=new Set(list.filter(Boolean));for(const p of loops)if(!want.has(p)&&AUD[p])AUD[p].pause();loops=want;playLoops()}
+function playLoops(){for(const p of loops){const a=aud(p);a.loop=true;a.volume=.7*duck;if(a.paused)a.play().catch(()=>{})}}
+function setDuck(k){duck=k;for(const p of loops)if(AUD[p])AUD[p].volume=.7*duck}
+let AC;function beep(){try{AC=AC||new AudioContext();const o=AC.createOscillator(),v=AC.createGain(),t=AC.currentTime;o.type='square';o.frequency.value=900;v.gain.setValueAtTime(.08,t);v.gain.exponentialRampToValueAtTime(.001,t+.06);o.connect(v);v.connect(AC.destination);o.start();o.stop(t+.07)}catch(e){}}
+function tone(freqs,type,dur,vol,slide){try{AC=AC||new AudioContext();if(AC.state==='suspended')AC.resume();const t=AC.currentTime;freqs.forEach(f=>{const o=AC.createOscillator(),v=AC.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+dur);v.gain.setValueAtTime(vol,t);v.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(v);v.connect(AC.destination);o.start(t);o.stop(t+dur)})}catch(e){}}
+
+/* ---------- условия ---------- */
+const ExprCache=new Map(),FUNCS={has:1,found:1};
+function parseExpr(src){src=(src||'').trim();if(ExprCache.has(src))return ExprCache.get(src);let r;try{r={ast:parseInner(src)}}catch(e){r={err:e.message};console.warn('Условие «'+src+'»: '+e.message)}ExprCache.set(src,r);return r}
+function parseInner(src){
+ const toks=[],re=/\s*(?:(\d+(?:\.\d+)?)|"([^"]*)"|'([^']*)'|([A-Za-z_Ѐ-ӿ][\wЀ-ӿ]*)|(&&|\|\||==|!=|>=|<=|[!<>(),=]))/y;let i=0;
+ while(i<src.length){re.lastIndex=i;const m=re.exec(src);if(!m){if(/^\s*$/.test(src.slice(i)))break;throw Error('непонятный символ')}i=re.lastIndex;
+  if(m[1]!==undefined)toks.push({t:'num',v:+m[1]});else if(m[2]!==undefined||m[3]!==undefined)toks.push({t:'str',v:m[2]??m[3]});
+  else if(m[4]){const w=m[4];if(w==='and'||w==='и')toks.push({t:'op',v:'&&'});else if(w==='or'||w==='или')toks.push({t:'op',v:'||'});else if(w==='not'||w==='не')toks.push({t:'op',v:'!'});else toks.push({t:'id',v:w})}
+  else toks.push({t:'op',v:m[5]==='='?'==':m[5]})}
+ if(!toks.length)return null;let p=0;
+ const eat=v=>{const t=toks[p];if(t&&t.t==='op'&&t.v===v){p++;return true}return false};
+ const or=()=>{let l=and();while(eat('||'))l={k:'or',l,r:and()};return l},and=()=>{let l=not();while(eat('&&'))l={k:'and',l,r:not()};return l},not=()=>eat('!')?{k:'not',e:not()}:cmp();
+ const cmp=()=>{const l=prim(),t=toks[p];if(t&&t.t==='op'&&['==','!=','>=','<=','>','<'].includes(t.v)){p++;return{k:'cmp',op:t.v,l,r:prim()}}return l};
+ const prim=()=>{const t=toks[p++];if(!t)throw Error('оборвалось');if(t.t==='num'||t.t==='str')return{k:'lit',v:t.v};
+  if(t.t==='id'){if(t.v==='true')return{k:'lit',v:1};if(t.v==='false')return{k:'lit',v:0};
+   if(eat('(')){if(!FUNCS[t.v])throw Error('функция '+t.v);const a=toks[p++];if(!a)throw Error('аргумент');if(!eat(')'))throw Error(')');return{k:'call',f:t.v,a:String(a.v)}}return{k:'var',v:t.v}}
+  if(t.t==='op'&&t.v==='('){const e=or();if(!eat(')'))throw Error(')');return e}throw Error('неожиданное '+t.v)};
+ const e=or();if(p<toks.length)throw Error('лишнее');return e}
+const truthy=v=>!!v&&v!=='0';
+function evalAst(n){if(!n)return true;switch(n.k){case'lit':return n.v;case'var':return n.v==='scene'?S.scene:(S.flags[n.v]??0);
+ case'not':return!truthy(evalAst(n.e));case'and':return truthy(evalAst(n.l))&&truthy(evalAst(n.r));case'or':return truthy(evalAst(n.l))||truthy(evalAst(n.r));
+ case'cmp':{const a=evalAst(n.l),b=evalAst(n.r);switch(n.op){case'==':return a==b;case'!=':return a!=b;case'>':return+a>+b;case'<':return+a<+b;case'>=':return+a>=+b;case'<=':return+a<=+b}}
+ case'call':return n.f==='has'?S.inv.includes(n.a):!!S.found[n.a]}}
+const cond=s=>!s||!String(s).trim()||truthy(evalAst(parseExpr(s).ast));
+function parseVal(v){if(v===''||v==null)return 1;if(/^-?\d+(\.\d+)?$/.test(String(v).trim()))return+v;if(v==='true')return 1;if(v==='false')return 0;return v}
+
+/* ---------- состояние ---------- */
+const S={scene:'splash',inv:[],found:{},flags:{},held:null,bubble:null,queue:[],px:150,tx:150,dir:1,walk:0,fade:null,mx:0,my:0,down:false,puzzle:null,wait:null,last:0};
+const PST={};
+const cur=()=>sceneById(S.scene);
+
+/* ---------- логика ---------- */
+function say(who,text,bx,by){if(!text)return;const b={who,text,bx,by};if(!S.bubble)S.bubble=b;else S.queue.push(b)}
+function runRules(rules){for(const r of rules||[]){if(!cond(r.if))continue;say(r.who,r.text,r.bx,r.by);runActs(r.act);return true}return false}
+function give(i){if(!i)return;if(!S.inv.includes(i))S.inv.push(i);S.found[i]=1}
+function take(i){const k=S.inv.indexOf(i);if(k>=0)S.inv.splice(k,1);if(S.held===i)S.held=null}
+function runActs(acts){let go=null;const L=acts||[];for(let i=0;i<L.length;i++){const a=L[i];if(a.t==='sound'&&a.wait){playSound(a);S.seq={rest:L.slice(i+1).concat(go?[go]:[])};go=null;break}
+ if(a.t==='say'&&L.slice(i+1).some(b=>b.t==='sound'&&b.wait)){say(a.who,a.text);S.seq={rest:L.slice(i+1).concat(go?[go]:[]),bub:true};go=null;break}
+ switch(a.t){
+ case'give':give(a.item);beep();break;case'take':take(a.item);break;
+ case'replace':{const k=S.inv.indexOf(a.item);if(k>=0)S.inv[k]=a.item2;else S.inv.push(a.item2);S.found[a.item2]=1;beep();break}
+ case'set':S.flags[a.flag]=parseVal(a.val);break;case'inc':S.flags[a.flag]=(+S.flags[a.flag]||0)+(+parseVal(a.val)||0);break;
+ case'goto':go=a;break;case'puzzle':openPuzzle(a.puzzle);break;case'say':say(a.who,a.text);break;
+ case'sound':playSound(a);break}}
+ if(go)fadeTo(()=>enterScene(go.scene,go.px))}
+/* Последовательное выполнение хвоста действий после звука с «ждать конца»:
+   звук с ожиданием — ждём конца; реплика — ждём, пока игрок её прочтёт; остальное — сразу. */
+function runSeq(rest){for(let i=0;i<rest.length;i++){const a=rest[i];
+  if(a.t==='sound'&&a.wait){playSound(a);S.seq={rest:rest.slice(i+1)};return}
+  if(a.t==='say'){say(a.who,a.text);if(i<rest.length-1){S.seq={rest:rest.slice(i+1),bub:true};return}continue}
+  runActs([a])}}
+function seqTick(){const q=S.seq;if(!q||S.wait||S.fade||(q.bub&&S.bubble))return;S.seq=null;runSeq(q.rest)}
+function playSound(a){const s=new Audio(url(a.src));s.volume=1;s.play().catch(()=>{});if(a.wait){const done=()=>{if(S.wait&&S.wait.a===s){S.wait=null;setDuck(1)}};S.wait={a:s,caption:a.caption||''};setDuck(.08);s.onended=done;s.onerror=done;setTimeout(done,(+a.maxSec||90)*1000)}}
+function enterScene(id,px){const sc=sceneById(id);if(!sc){console.warn('Нет сцены',id);return}S.scene=id;S.px=px!=null?px:sc.startPx;S.tx=S.px;S.walk=0;S.held=null;S.puzzle=null;
+ setLoops([sc.music,sc.ambient]);runRules(sc.onEnter);if(location.hash!=='#'+id)history.replaceState(null,'','#'+id)}
+function fadeTo(cb){S.fade={a:0,ph:1,cb}}
+/* пресет сцены; если своего нет — берём у ближайшей предыдущей сцены, у которой он есть */
+function presetOf(sc){if(!sc)return null;if(sc.preset)return sc.preset;for(let i=P.scenes.indexOf(sc)-1;i>=0;i--)if(P.scenes[i].preset)return P.scenes[i].preset;return null}
+function startGame(id){S.seq=null;S.inv=M().startInv.slice();S.found={};S.inv.forEach(i=>S.found[i]=1);S.flags={};S.bubble=null;S.queue=[];
+ const pr=id&&presetOf(sceneById(id));if(pr){S.inv=(pr.inv||[]).slice();S.found={};[...S.inv,...(pr.found||[])].forEach(i=>S.found[i]=1);S.flags=Object.assign({},pr.flags||{})}
+ enterScene(id||M().startScene)}
+/* ---------- отладочное меню: набрать код (по умолчанию 178500) ---------- */
+function dbgItems(){const L=P.scenes,cols=2,rows=Math.ceil(L.length/cols),bh=Math.min(80,Math.floor((H-300)/rows)-10);
+ return L.map((sc,i)=>({sc,i,x:i%cols===0?316:836,y:170+Math.floor(i/cols)*(bh+10)+bh/2,w:440,h:bh}))}
+function dbgEnter(id){S.seq=null;for(const k in PST)delete PST[k];if(S.wait){try{S.wait.a.pause()}catch(e){}S.wait=null}setDuck(1);S.fade=null;S.puzzle=null;S.dbg=false;S.scene='';startGame(id)}
+function dbgClick(x,y){for(const b of dbgItems())if(Math.abs(x-b.x)<b.w/2&&Math.abs(y-b.y)<b.h/2){dbgEnter(b.sc.id);return}if(Math.abs(x-W/2)<130&&Math.abs(y-(H-70))<35)S.dbg=false}
+function drawDbg(){g.fillStyle='#141008';g.fillRect(0,0,W,H);g.textAlign='center';g.textBaseline='middle';g.font='64px "Amatic SC"';g.fillStyle='#e6cd96';g.fillText('Выбор уровня',W/2,90);
+ for(const b of dbgItems()){const hov=Math.abs(S.mx-b.x)<b.w/2&&Math.abs(S.my-b.y)<b.h/2;g.fillStyle=hov?'rgba(230,205,150,.25)':'rgba(230,205,150,.08)';g.strokeStyle='#e6cd96';g.lineWidth=2;
+  g.beginPath();g.rect(b.x-b.w/2,b.y-b.h/2,b.w,b.h);g.fill();g.stroke();const t=(b.i+1)+'. '+(b.sc.name||b.sc.id)+(b.sc.preset?'':presetOf(b.sc)?'  (пресет предыдущей)':'  (без пресета)');let fs=Math.min(32,b.h*.5);do{g.font=fs+'px "Amatic SC"';fs--}while(fs>12&&g.measureText(t).width>b.w-24);
+  g.fillStyle=presetOf(b.sc)?'#f1e2bd':'#9c8d6c';g.fillText(t,b.x,b.y)}
+ const hov=Math.abs(S.mx-W/2)<130&&Math.abs(S.my-(H-70))<35;g.fillStyle=hov?'rgba(230,205,150,.25)':'rgba(230,205,150,.08)';g.beginPath();g.rect(W/2-130,H-105,260,70);g.fill();g.stroke();
+ g.font='36px "Amatic SC"';g.fillStyle='#f1e2bd';g.fillText('Вернуться',W/2,H-70);g.textAlign='left'}
+function zoneHit(z,x,y){const a=z.a;return z.t==='r'?(x>=a[0]&&x<=a[2]&&y>=a[1]&&y<=a[3]):(a[2]>0&&a[3]>0&&((x-a[0])/a[2])**2+((y-a[1])/a[3])**2<=1)}
+const zoneAt=(sc,x,y)=>sc.zones.find(z=>zoneHit(z,x,y));
+const arrowAt=(sc,x,y)=>sc.arrows.find(a=>Math.abs(x-a.x)<=45&&Math.abs(y-a.y)<=28&&cond(a.showIf));
+function walkTo(sc,x){let lo=sc.walkMin??70,hi=sc.walkMax??1080;if(sc.limitIf&&cond(sc.limitIf)){if(sc.limitMin!=null)lo=Math.max(lo,sc.limitMin);if(sc.limitMax!=null)hi=Math.min(hi,sc.limitMax)}S.tx=Math.max(lo,Math.min(hi,x))}
+function combine(a,b){const c=P.combos.find(c=>(c.a===a&&c.b===b)||(c.a===b&&c.b===a));if(!(c&&runRules(c.rules)))say('zet',M().nope)}
+function panelClick(x,y){const i=SX.findIndex(s=>Math.abs(x-s)<52);if(i<0||Math.abs(y-SY)>=52)return;const it=S.inv[i];
+ if(S.held){if(it&&it!==S.held)combine(S.held,it);S.held=null}else if(it)S.held=it}
+function click(x,y){
+ if(S.scene==='splash'){S.scene=M().menuImage?'menu':'';if(!M().menuImage)startGame();else setLoops([M().menuMusic]);return}
+ if(S.scene==='menu'){const b=M().startBox;if(!b||(x>=b[0]&&x<=b[2]&&y>=b[1]&&y<=b[3]))fadeTo(()=>startGame());return}
+ const sc=cur();if(!sc)return;
+ if(y>UI_Y){panelClick(x,y);return}
+ if(S.held){const h=S.held;S.held=null;const z=zoneAt(sc,x,y);
+  if(z){const blk=z.use.find(u=>u.item===h),any=z.use.find(u=>u.item==='*');if(!((blk&&runRules(blk.rules))||(any&&runRules(any.rules))))say('zet',M().nope)}
+  else{const it=itemById(h),near=sc.mode==='side'&&Math.abs(x-S.px)<100&&y>330&&y<800;say('zet',near&&it&&it.self||M().nope)}return}
+ const ar=arrowAt(sc,x,y);if(ar){if(cond(ar.if))runActs([...ar.act,{t:'goto',scene:ar.to,px:ar.px}]);else runRules(ar.fail);return}
+ const r=sc.walkThroughPlayer;if(sc.mode==='side'&&r>0&&Math.abs(x-S.px)<r&&y>250&&y<760){walkTo(sc,x);return}
+ const z=zoneAt(sc,x,y);if(z){runRules(z.look);return}
+ if(sc.mode==='side')walkTo(sc,x)}
+function down(x,y){S.down=true;playLoops();if(S.dbg){dbgClick(x,y);return}if(S.fade||S.wait)return;
+ if(S.bubble&&S.queue.length){S.bubble=S.queue.shift();return}
+ if(S.bubble)S.bubble=null;
+ if(S.puzzle){if(isExit(x,y))exitPuzzle();else if(y>UI_Y)panelClick(x,y);else pcall('click',x,y);return}
+ click(x,y)}
+
+/* ---------- головоломки ---------- */
+/* Реестр типов: встроенные (PZ ниже), из подключённых скриптов и из кода в проекте (window.PUZZLES) */
+const PUZZLES=window.PUZZLES=window.PUZZLES||{};
+const AREA=Object.freeze({x:0,y:0,w:W,h:UI_Y});
+function puzzleApi(p){const live=()=>S.puzzle&&S.puzzle.id===p.id,okItem=i=>{if(itemById(i))return true;console.warn('Головоломка '+p.id+': нет предмета «'+i+'»');return false};return Object.freeze({
+ id:p.id,params:p.params||{},area:AREA,
+ solve(result){if(!live()||truthy(S.flags['solved_'+p.id]))return;S.flags['solved_'+p.id]=1;if(result!=null)S.flags[p.id+'_result']=typeof result==='number'?result:String(result);beep();runRules(p.onSolve)},
+ unsolve(){if(live())S.flags['solved_'+p.id]=0},solved:()=>truthy(S.flags['solved_'+p.id]),
+ exit(){if(live())exitPuzzle()},
+ held:()=>S.held,clearHeld(){S.held=null},inventory:()=>S.inv.slice(),has:i=>S.inv.includes(i),
+ take(i){if(live()&&okItem(i))take(i)},give(i){if(live()&&okItem(i))give(i)},
+ say(t,x,y){say('zet',String(t),x,y)},beep,tone,
+ img,load:loadImg,sound(path,vol=1){try{const a=new Audio(url(path));a.volume=vol;a.play().catch(()=>{})}catch(e){}},
+ frame(title){g.fillStyle='rgba(10,8,4,.92)';g.fillRect(0,0,W,UI_Y);g.strokeStyle='#e6cd96';g.lineWidth=3;g.strokeRect(20,20,W-40,UI_Y-40);
+  if(title){g.fillStyle='#e6cd96';g.font='42px "Amatic SC"';g.textAlign='center';g.textBaseline='middle';g.fillText(title,W/2,60);g.textAlign='left';g.textBaseline='alphabetic'}}})}
+function pcall(fn,...a){const pz=S.puzzle;if(!pz||pz.err||!pz.inst||typeof pz.inst[fn]!=='function')return;
+ try{return pz.inst[fn](...a)}catch(e){pz.err=fn+'(): '+e.message;console.error('Головоломка «'+pz.id+'» упала в '+fn+'()',e)}}
+function openPuzzle(id){const p=puzzleById(id);if(!p){console.warn('Нет головоломки',id);return}
+ let inst=PST[id],err=null;
+ if(!inst){const F=PUZZLES[p.type]||PZ[p.type];if(!F)console.warn('Тип головоломки «'+p.type+'» не найден — заглушка');
+  try{inst=(F||PZ.custom)(p,puzzleApi(p),p.params||{});if(!inst||typeof inst.draw!=='function')throw Error('фабрика должна вернуть объект с draw()')}catch(e){err='создание: '+e.message;console.error('Головоломка «'+id+'»',e);inst={}}
+  if(!err)PST[id]=inst}
+ S.puzzle={id,p,inst,err};pcall('open')}
+function exitPuzzle(){const pz=S.puzzle;if(!pz)return;pcall('close');S.puzzle=null;runRules(pz.p.onExit)}
+function drawPuzzle(){const pz=S.puzzle;g.save();g.beginPath();g.rect(0,0,W,UI_Y);g.clip();
+ if(pz.err){g.fillStyle='#1a0a08';g.fillRect(0,0,W,UI_Y);g.fillStyle='#e0605a';g.font='28px system-ui,sans-serif';g.textAlign='center';g.fillText('Ошибка в головоломке «'+pz.id+'»',W/2,300);g.font='18px Consolas,monospace';g.fillStyle='#e6cd96';g.fillText(pz.err.slice(0,110),W/2,340);g.fillText('Подробности — в консоли (F12). ВЫХОД закрывает окно.',W/2,380)}
+ else pcall('draw');
+ g.restore();exitBtn()}
+function exitBtn(){g.fillStyle='#331f1f';g.fillRect(40,715,100,30);g.strokeStyle='#e6cd96';g.lineWidth=2;g.strokeRect(40,715,100,30);g.fillStyle='#e6cd96';g.font='24px "Amatic SC"';g.textAlign='center';g.textBaseline='middle';g.fillText('ВЫХОД',90,730);g.textAlign='left';g.textBaseline='top'}
+const isExit=(x,y)=>x>40&&x<140&&y>715&&y<745;
+const PZ={};
+/* Цепь (щиток светофора) */
+PZ.pipes=(p,A,o)=>{const SZ=75,OX=40,OY=20,J=o.jumper||'key',T=Object.assign({take:'Забрал ключ. Цепь разомкнута.',put:'Вот теперь контакт есть. На обратном пути заберу.',burnt:'Здесь выгорели провода. Нужна перемычка.',off:'Светофор погас. Похоже, я что-то не так подключил.'},o.texts||{});
+ if(o.bg)loadImg(o.bg);
+ const types=[1,1,1,2,2,3,4],G=Array.from({length:9},()=>Array.from({length:9},()=>({t:types[Math.floor(Math.random()*types.length)],r:Math.floor(Math.random()*4)})));
+ const fixed=o.layout||[[0,0,5,0],[0,1,3,0],[0,2,2,1],[1,2,1,1],[2,2,3,1],[2,3,1,0],[2,4,2,1],[3,4,1,1],[4,4,3,1],[4,5,1,0],[4,6,2,1],[5,6,1,1],[6,6,3,2],[6,5,1,0],[6,4,2,1],[7,4,1,1],[8,4,3,2],[8,3,1,0],[8,2,8,0],[8,1,8,0],[8,0,6,0],[1,1,2,0],[2,1,1,1],[3,1,3,0],[3,2,1,0],[3,3,2,2],[4,3,2,1],[5,3,1,1],[6,3,2,1],[7,3,2,0],[8,3,2,0]];
+ for(const[y,x,t,r]of fixed)G[y][x]={t,r};
+ let jin=false,solved=false;
+ const conns=(t,r)=>t===1?(r%2===0?['L','R']:['U','D']):t===2?[['U','R'],['R','D'],['D','L'],['L','U']][r%4]:t===3?[['L','R','U'],['U','D','R'],['L','R','D'],['U','D','L']][r%4]:t===4?['L','R','U','D']:(t===5||t===6)?['R']:t===8?(jin?['U','L','R']:[]):[];
+ const D={U:[0,-1,'D'],D:[0,1,'U'],L:[-1,0,'R'],R:[1,0,'L']};
+ function check(){const vis=new Set(['0,0']),q=[[0,0]];let ok=false,i=0;while(i<q.length){const[cx,cy]=q[i++];if(cx===0&&cy===8)ok=true;for(const c of conns(G[cy][cx].t,G[cy][cx].r)){const nx=cx+D[c][0],ny=cy+D[c][1];if(nx<0||ny<0||nx>8||ny>8||vis.has(nx+','+ny))continue;const n=G[ny][nx];if(conns(n.t,n.r).includes(D[c][2])){vis.add(nx+','+ny);q.push([nx,ny])}}}return{ok,vis}}
+ function re(x,y){const r=check();if(r.ok&&!solved){solved=true;A.solve()}else if(!r.ok&&solved){solved=false;A.unsolve();A.say(T.off,x-150,y-150)}}
+ return{debug:{G,check},
+ click(x,y){if(isExit(x,y)){A.exit();return}const cx=Math.floor((x-OX)/SZ),cy=Math.floor((y-OY)/SZ);if(cx<0||cy<0||cx>8||cy>8)return;const c=G[cy][cx];
+  if(c.t===8){if(jin){jin=false;A.give(J);A.beep();A.say(T.take,x-150,y-150);re(x,y)}else if(A.held()===J){A.take(J);A.clearHeld();jin=true;A.beep();A.say(T.put,x-150,y-150);re(x,y)}else A.say(T.burnt,x-150,y-150);return}
+  if(c.t>=1&&c.t<=4){c.r=(c.r+1)%4;A.beep();re(x,y)}},
+ draw(){g.save();g.beginPath();g.rect(0,0,W,UI_Y);g.clip();g.fillStyle='#000';g.fillRect(0,0,W,UI_Y);const bg=img(o.bg);if(bg)g.drawImage(bg,0,0,W,UI_Y);const r=check();
+  for(let y=0;y<9;y++)for(let x=0;x<9;x++){const c=G[y][x],on=r.vis.has(x+','+y);g.save();g.translate(OX+x*SZ+SZ/2,OY+y*SZ+SZ/2);g.rotate(c.r*Math.PI/2);g.lineWidth=8;g.lineCap='round';
+   g.strokeStyle=on?'#ffaa00':'#4fa8e8';g.shadowColor=g.strokeStyle;g.shadowBlur=on?10:5;g.beginPath();const h=SZ/2;
+   if(c.t===1){g.moveTo(-h,0);g.lineTo(h,0)}else if(c.t===2){g.moveTo(0,-h);g.lineTo(0,0);g.lineTo(h,0)}else if(c.t===3){g.moveTo(-h,0);g.lineTo(h,0);g.moveTo(0,0);g.lineTo(0,-h)}else if(c.t===4){g.moveTo(-h,0);g.lineTo(h,0);g.moveTo(0,-h);g.lineTo(0,h)}
+   else if(c.t===5||c.t===6){g.moveTo(0,0);g.lineTo(h,0);g.fillStyle=c.t===5?'#ffaa00':'#00ff00';g.arc(0,0,15,0,7);g.fill()}
+   else if(c.t===8){g.strokeStyle=jin&&on?'#ffaa00':'#555';g.shadowBlur=jin&&on?10:0;g.moveTo(-h,0);g.lineTo(h,0);g.moveTo(0,0);g.lineTo(0,-h)}g.stroke();g.restore()}
+  if(jin){g.save();g.translate(OX+2*SZ,OY+8*SZ+SZ/2);g.rotate(Math.PI/4);icon(J,0,0,160);g.restore()}exitBtn();g.restore()}}};
+/* Провода без пересечений (наушники) */
+PZ.wires=(p,A,o)=>{const EDGES=o.edges||[[0,1],[1,2],[3,4],[4,5],[6,7],[7,8],[0,3],[3,6],[1,4],[4,7],[2,5],[5,8],[0,4],[4,8],[1,5],[9,0],[9,1],[9,4]],COL=['#d9534f','#4fa8e8','#5cb85c','#e6c84f','#c77dff','#ff9e5e'];
+ const nN=o.nodes||10,pins=o.pins||['ВХОД','ДИНАМИК'],title=o.title||'Наушники: разведи провода так, чтобы они нигде не пересекались';
+ const segX=(a,b,c,d)=>{const s=(p,q,r)=>Math.sign((q.x-p.x)*(r.y-p.y)-(q.y-p.y)*(r.x-p.x));return s(a,b,c)*s(a,b,d)<0&&s(c,d,a)*s(c,d,b)<0};
+ let N,drag=null,solved=false;
+ const cross=()=>{let c=0;const bad=new Set;for(let i=0;i<EDGES.length;i++)for(let j=i+1;j<EDGES.length;j++){const[a,b]=EDGES[i],[e,f]=EDGES[j];if(a==e||a==f||b==e||b==f)continue;if(segX(N[a],N[b],N[e],N[f])){c++;bad.add(i);bad.add(j)}}return{c,bad}};
+ let seed=o.seed??11;const rnd=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
+ for(let k=0;k<400;k++){N=[];for(let i=0;i<nN;i++)N.push({x:260+rnd()*640,y:140+rnd()*500,pin:null});N[0]={x:150,y:390,pin:pins[0]};N[8]={x:1000,y:390,pin:pins[1]};
+  let ok=true;for(let i=0;i<nN&&ok;i++)for(let j=i+1;j<nN;j++)if(Math.hypot(N[i].x-N[j].x,N[i].y-N[j].y)<85){ok=false;break}if(ok&&cross().c>=(o.minCrossings??9))break}
+ return{
+ click(x,y){if(isExit(x,y)){drag=null;A.exit();return}let best=-1,bd=34;N.forEach((n,i)=>{if(n.pin)return;const d=Math.hypot(n.x-x,n.y-y);if(d<bd){bd=d;best=i}});if(best>=0)drag=best},
+ move(x,y){if(drag==null)return;N[drag].x=Math.max(60,Math.min(1090,x));N[drag].y=Math.max(110,Math.min(690,y))},
+ up(){if(drag==null)return;drag=null;const r=cross();if(r.c===0&&!solved){solved=true;A.solve()}else if(r.c>0&&solved){solved=false;A.unsolve();A.say(o.breakText||'Опять где-то замкнуло.',W/2-150,100)}},
+ draw(){const r=cross();g.save();g.beginPath();g.rect(0,0,W,UI_Y);g.clip();g.fillStyle='#10201a';g.fillRect(0,0,W,UI_Y);g.strokeStyle='#1d3a2c';g.lineWidth=1;
+  for(let x=0;x<W;x+=40){g.beginPath();g.moveTo(x,0);g.lineTo(x,UI_Y);g.stroke()}for(let y=0;y<UI_Y;y+=40){g.beginPath();g.moveTo(0,y);g.lineTo(W,y);g.stroke()}
+  g.strokeStyle='#e6cd96';g.lineWidth=4;g.strokeRect(20,20,W-40,705);g.font='42px "Amatic SC"';g.fillStyle='#e6cd96';g.textAlign='center';g.textBaseline='middle';g.fillText(title,W/2,62);g.lineCap='round';
+  EDGES.forEach((e,i)=>{const a=N[e[0]],b=N[e[1]];g.lineWidth=7;if(solved){g.strokeStyle='#ffaa00';g.shadowColor='#ffaa00';g.shadowBlur=10}else{g.strokeStyle=r.bad.has(i)?'#ff3b3b':COL[i%6];g.shadowColor=g.strokeStyle;g.shadowBlur=r.bad.has(i)?8:3}g.beginPath();g.moveTo(a.x,a.y);g.lineTo(b.x,b.y);g.stroke()});
+  g.shadowBlur=0;N.forEach((n,i)=>{if(n.pin){g.fillStyle='#331f1f';g.strokeStyle='#e6cd96';g.lineWidth=3;g.beginPath();g.rect(n.x-58,n.y-28,116,56);g.fill();g.stroke();g.fillStyle=solved?'#ffaa00':'#e6cd96';g.font='30px "Amatic SC"';g.fillText(n.pin,n.x,n.y)}
+   else{g.fillStyle=drag===i?'#fff2b0':'#c9a14a';g.strokeStyle='#2a2010';g.lineWidth=3;g.beginPath();g.arc(n.x,n.y,17,0,7);g.fill();g.stroke();g.fillStyle='#2a2010';g.beginPath();g.arc(n.x,n.y,5,0,7);g.fill()}});
+  g.font='34px "Amatic SC"';g.fillStyle=solved?'#ffaa00':'#e6cd96';g.fillText(solved?'Сигнал есть! Нажмите ВЫХОД':'Пересечений: '+r.c,W/2,700);exitBtn();g.restore()}}};
+/* Аккорды (ритм) */
+PZ.chords=(p,A,o)=>{const seq=o.seq||['Am','F','C','E'],target=o.target||16,title=o.title||('Подбери народную мелодию: '+seq.join(' → '));
+ const FREQ=Object.assign({Am:[220,261.63,329.63],F:[174.61,220,261.63],C:[130.81,164.81,196],E:[164.81,207.65,246.94],G:[196,246.94,293.66],Dm:[146.83,174.61,220],Em:[164.81,196,246.94]},o.freqs||{});
+ const BTN=seq.map((n,i)=>({n,x:220+i*(seq.length>4?680/(seq.length-1):170)}));let c;
+ const reset=()=>{c={notes:[],score:0,target:0,last:0,time:0,fb:''}};reset();
+ return{open(){if(!A.solved())reset()},
+ update(dt){if(A.solved())return;c.time+=dt;const iv=Math.max(.55,1.15-c.score*.035),sp=220+c.score*14;if(c.time-c.last>iv){c.last=c.time;c.notes.push({type:seq[Math.floor(Math.random()*seq.length)],x:W+60})}for(const n of c.notes)n.x-=sp*dt;c.notes=c.notes.filter(n=>n.x>-100)},
+ click(x,y){if(isExit(x,y)){A.exit();return}if(A.solved())return;for(const b of BTN)if(x>b.x-65&&x<b.x+65&&y>620&&y<700){const z=c.notes.find(n=>n.x+45>310&&n.x-45<410);
+   if(z&&z.type===b.n&&b.n===seq[c.target]){c.notes=c.notes.filter(n=>n!==z);c.score++;c.target=(c.target+1)%seq.length;c.fb='+1';tone(FREQ[b.n]||[440],'triangle',1.2,.15);if(c.score>=target)A.solve()}
+   else{c.score=0;c.target=0;c.notes=[];c.last=c.time;c.fb='Ошибка!';tone([150],'sawtooth',.3,.2,80)}return}},
+ draw(){g.save();g.beginPath();g.rect(0,0,W,UI_Y);g.clip();g.fillStyle='rgba(0,0,0,.82)';g.fillRect(0,0,W,UI_Y);g.strokeStyle='#e6cd96';g.lineWidth=3;g.strokeRect(20,20,W-40,705);
+  g.fillStyle='#e6cd96';g.font='42px "Amatic SC"';g.textAlign='center';g.textBaseline='middle';g.fillText(title,W/2,60);g.font='32px "Amatic SC"';g.fillText(A.solved()?'Готово! Нажмите ВЫХОД':'Очки: '+c.score+' / '+target,W/2,110);
+  seq.forEach((s,i)=>{const sx=W/2-(seq.length-1)*60+i*120;g.fillStyle=i===c.target?'#ffaa00':'#331f1f';g.strokeStyle='#e6cd96';g.lineWidth=2;g.beginPath();g.rect(sx-45,135,90,50);g.fill();g.stroke();g.fillStyle=i===c.target?'#2a2010':'#e6cd96';g.fillText(s,sx,160)});
+  g.strokeStyle='#e6cd96';g.lineWidth=2;g.beginPath();g.moveTo(80,520);g.lineTo(W-80,520);g.stroke();g.strokeStyle='#ffaa00';g.lineWidth=4;g.strokeRect(310,460,100,90);g.fillStyle='rgba(255,170,0,.12)';g.fillRect(310,460,100,90);
+  c.notes.forEach(n=>{g.fillStyle='#331f1f';g.strokeStyle='#e6cd96';g.lineWidth=3;g.beginPath();g.rect(n.x-45,480,90,70);g.fill();g.stroke();g.fillStyle='#e6cd96';g.font='40px "Amatic SC"';g.fillText(n.type,n.x,515)});
+  BTN.forEach(b=>{g.fillStyle='#331f1f';g.strokeStyle='#e6cd96';g.lineWidth=3;g.beginPath();g.rect(b.x-65,620,130,80);g.fill();g.stroke();g.fillStyle='#e6cd96';g.font='34px "Amatic SC"';g.fillText(b.n,b.x,660)});
+  if(c.fb){g.fillStyle='#ffaa00';g.font='30px "Amatic SC"';g.fillText(c.fb,W/2,590)}exitBtn();g.restore()}}};
+/* Заглушка для своих головоломок: замените на реализацию PZ.<тип>=(p,A,params)=>({draw,click,move,up,update,open}) */
+PZ.custom=(p,A)=>({click(x,y){if(isExit(x,y)){A.exit();return}if(x>W/2-120&&x<W/2+120&&y>420&&y<480)A.solve()},
+ draw(){g.save();g.fillStyle='rgba(10,8,4,.9)';g.fillRect(0,0,W,UI_Y);g.fillStyle='#e6cd96';g.textAlign='center';g.textBaseline='middle';g.font='48px "Amatic SC"';g.fillText(p.name||p.id,W/2,200);
+  g.font='30px "Amatic SC"';g.fillText('Головоломка типа «'+p.type+'» ещё не реализована в движке',W/2,280);g.fillText(p.desc||'',W/2,330);
+  g.strokeStyle='#e6cd96';g.lineWidth=2;g.strokeRect(W/2-120,420,240,60);g.fillText(A.solved()?'Решено':'Решить (заглушка)',W/2,450);exitBtn();g.restore()}});
+
+/* ---------- отрисовка ---------- */
+function wrap(t,mw){const w=String(t).split(' '),L=[];let c='';for(const x of w){const n=c?c+' '+x:x;if(g.measureText(n).width>mw&&c){L.push(c);c=x}else c=n}L.push(c);return L}
+function icon(id,x,y,h,rot=0){const it=itemById(id),i=it&&img(it.icon);g.save();g.translate(x,y);g.rotate(rot);
+ if(i){const w=h*i.naturalWidth/i.naturalHeight;g.drawImage(i,-w/2,-h/2,w,h)}
+ else{g.fillStyle='#3a2e1c';g.strokeStyle='#e6cd96';g.lineWidth=2;g.beginPath();g.rect(-h*.4,-h*.4,h*.8,h*.8);g.fill();g.stroke();g.fillStyle='#e6cd96';g.font='22px "Amatic SC"';g.textAlign='center';g.textBaseline='middle';g.fillText((it&&it.name||id).slice(0,10),0,0)}
+ if(it&&it.drop){const r=h*.13,cx=h*.26,cy=h*.2;g.fillStyle='#4fa8e8';g.strokeStyle='#0d2a44';g.lineWidth=2;g.beginPath();g.moveTo(cx,cy-r*2);g.quadraticCurveTo(cx+r*1.5,cy-r*.2,cx+r,cy+r*.4);g.arc(cx,cy+r*.4,r,0,Math.PI);g.quadraticCurveTo(cx-r*1.5,cy-r*.2,cx,cy-r*2);g.fill();g.stroke()}
+ g.restore()}
+const spriteFont=s=>(s.fontSize||38)+'px "Amatic SC"';
+function spriteBox(s){let w,h;if(s.text){g.save();g.font=spriteFont(s);w=s.tw||320;h=wrap(s.text,w).length*(s.fontSize||38)*.9;g.restore()}
+ else{const i=s.item?img((itemById(s.item)||{}).icon):img(s.img);if(i&&s.scale>0){w=i.naturalWidth*s.scale;h=i.naturalHeight*s.scale}else{h=s.h;w=i?h*i.naturalWidth/i.naturalHeight:h}}
+ return s.anchor==='tl'?[s.x,s.y,w,h]:[s.x-w/2,s.y-h/2,w,h]}
+function drawSprite(s){const[x,y,w,h]=spriteBox(s);g.save();
+ if(s.text){g.font=spriteFont(s);g.fillStyle=s.color||'#eedcb4cc';g.textBaseline='top';wrap(s.text,s.tw||320).forEach((l,i)=>g.fillText(l,x,y+i*(s.fontSize||38)*.9))}
+ else if(s.item)icon(s.item,x+w/2,y+h/2,h,s.rot||0);
+ else{const i=img(s.img);if(i){g.translate(x+w/2,y+h/2);g.rotate(s.rot||0);g.drawImage(i,-w/2,-h/2,w,h)}}g.restore()}
+function arrow(cx,cy,d,t){g.save();g.globalAlpha=.75+.25*Math.sin(t/300);g.fillStyle='#e6cd96';g.strokeStyle='#2a2010';g.lineWidth=3;g.beginPath();[[-45,-12],[5,-12],[5,-28],[45,0],[5,28],[5,12],[-45,12]].forEach(([a,b],i)=>i?g.lineTo(cx+a*d,cy+b):g.moveTo(cx+a*d,cy+b));g.closePath();g.fill();g.stroke();g.restore()}
+function drawPlayer(sc){const n=Math.floor(S.walk/.33)%2+1,dir=M().framesDir||'images/character/',i=img(dir+(S.dir>0?'right':'left')+n+'.png');if(!i)return;const k=sc.playerScale||1,w=222*k,h=318*k;g.drawImage(i,S.px-w/2,(sc.playerY||700)-h,w,h)}
+function bubblePos(b){const sc=cur()||{},sp=whoById(b.who)||{};let x=b.bx??sp.bx,y=b.by??sp.by;
+ if(x==null||y==null){if(b.who==='zet'||sp.plain){x=x??sc.bubbleX??(S.px-50);y=y??sc.bubbleY??100}else{x=x??W/2-150;y=y??100}}
+ return[Math.max(20,Math.min(W-320,x)),Math.max(20,Math.min(H-300,y))]}
+function drawBubble(){const b=S.bubble,sp=whoById(b.who)||{},t=sp.plain||!sp.name?b.text:sp.name+': "'+b.text+'"',[bx,by]=bubblePos(b),v=img(M().voice);
+ if(v)g.drawImage(v,bx,by,300,238);else{g.fillStyle='rgba(22,16,9,.93)';g.strokeStyle='#e6cd96';g.lineWidth=3;g.beginPath();g.rect(bx,by,300,200);g.fill();g.stroke()}
+ g.font='32px "Amatic SC"';g.fillStyle='#f1e2bd';g.textAlign='center';g.textBaseline='middle';let L=wrap(t,210),lh=28;if(L.length>5){g.font='26px "Amatic SC"';L=wrap(t,230);lh=24}
+ L.forEach((l,i)=>g.fillText(l,bx+150,by+100+(i-(L.length-1)/2)*lh));g.textAlign='left'}
+function draw(t){g.clearRect(0,0,W,H);g.textBaseline='alphabetic';g.textAlign='left';
+ if(S.scene==='loading'||S.scene==='splash'){g.fillStyle='#000';g.fillRect(0,0,W,H);g.font='60px "Amatic SC"';g.fillStyle='rgba(238,220,180,'+(.55+.45*Math.sin(t/400))+')';g.textAlign='center';g.textBaseline='middle';g.fillText(S.scene==='loading'?'Загрузка…':'Нажмите, чтобы начать',W/2,H/2);g.textAlign='left'}
+ else if(S.scene==='menu'){const i=img(M().menuImage);if(i)g.drawImage(i,0,0,W,H)}
+ else{const sc=cur();if(sc){const bg=img(sc.bg);if(bg)g.drawImage(bg,0,0,W,H);else{g.fillStyle='#000';g.fillRect(0,0,W,H)}
+  for(const s of sc.sprites)if(cond(s.showIf))drawSprite(s);
+  if(sc.mode==='side')drawPlayer(sc);
+  for(const a of sc.arrows)if(cond(a.showIf))arrow(a.x,a.y,a.dir,t);
+  if(S.puzzle)drawPuzzle();
+  S.inv.forEach((id,i)=>{if(id!==S.held)icon(id,SX[i],SY,84);const it=itemById(id);if(it&&it.counterFlag){const n='x'+Math.floor((+S.flags[it.counterFlag]||0)/(it.counterDiv||1));g.save();g.font='28px "Amatic SC"';g.fillStyle='#ffe28a';g.strokeStyle='#2a2010';g.lineWidth=4;g.textAlign='center';g.textBaseline='middle';g.strokeText(n,SX[i]+34,SY+30);g.fillText(n,SX[i]+34,SY+30);g.restore()}})}}
+ if(S.bubble&&!S.wait)drawBubble();
+ if(S.held)icon(S.held,S.mx+30,S.my+30,72);
+ if(S.wait){if(S.wait.caption){g.font='48px "Amatic SC"';g.fillStyle='#e6cd96';g.textAlign='center';g.textBaseline='middle';g.fillText(S.wait.caption,W/2,H-120);g.textAlign='left'}}
+ else{const c=img(M().cursor);g.save();g.translate(S.mx,S.my);if(S.down)g.rotate(-.35);if(c)g.drawImage(c,-6,-6,50,50);else{g.fillStyle='#e6cd96';g.beginPath();g.moveTo(0,0);g.lineTo(18,8);g.lineTo(8,18);g.fill()}g.restore()}
+ if(S.fade){g.fillStyle='rgba(0,0,0,'+S.fade.a+')';g.fillRect(0,0,W,H)}
+ if(S.dbg)drawDbg()}
+let stepA=null;
+function update(dt){seqTick();if(S.fade){const f=S.fade;f.a+=f.ph*dt/.6;if(f.ph===1&&f.a>=1){f.a=1;f.ph=-1;f.cb()}else if(f.ph===-1&&f.a<=0)S.fade=null}
+ const sc=cur();let moving=false;if(sc&&sc.mode==='side'&&!S.wait&&!S.puzzle){const d=S.tx-S.px;if(Math.abs(d)>3){S.dir=d>0?1:-1;S.px+=S.dir*Math.min(Math.abs(d),170*dt);S.walk+=dt;moving=true}else S.walk=0}else S.walk=0;
+ if(M().stepSound){stepA=stepA||aud(M().stepSound);if(moving&&stepA.paused){stepA.loop=true;stepA.volume=.6;stepA.play().catch(()=>{})}else if(!moving&&!stepA.paused){stepA.pause();stepA.currentTime=0}}
+ if(S.puzzle)pcall('update',dt)}
 function loop(t){const dt=Math.min(.05,(t-S.last)/1000||0);S.last=t;update(dt);draw(t);requestAnimationFrame(loop)}
-init();
+
+/* ---------- ввод и запуск ---------- */
+function fit(){const k=Math.min(innerWidth/W,innerHeight/H);cv.style.width=W*k+'px';cv.style.height=H*k+'px'}
+function pos(e){const r=cv.getBoundingClientRect();S.mx=(e.clientX-r.left)*W/r.width;S.my=(e.clientY-r.top)*H/r.height}
+addEventListener('resize',fit);addEventListener('contextmenu',e=>e.preventDefault());
+addEventListener('mousemove',e=>{pos(e);if(S.puzzle)pcall('move',S.mx,S.my)});
+addEventListener('mouseup',()=>{S.down=false;if(S.puzzle)pcall('up',S.mx,S.my)});
+addEventListener('mousedown',e=>{pos(e);if(S.scene!=='loading')down(S.mx,S.my)});
+S.dbuf='';addEventListener('keydown',e=>{if(!P)return;const code=String(M().debugCode??'178500');
+ if(e.key==='Escape'&&S.dbg){S.dbg=false;return}
+ if(S.dbg&&/^[1-9]$/.test(e.key)){const sc=P.scenes[+e.key-1];if(sc)dbgEnter(sc.id);return}
+ if(S.puzzle&&!S.dbg){if(e.key==='Escape'){exitPuzzle();return}pcall('key',e.key,e)}
+ if(code&&/^[0-9]$/.test(e.key)){S.dbuf=(S.dbuf+e.key).slice(-code.length);if(S.dbuf===code&&S.scene!=='loading'){S.dbuf='';S.dbg=true;S.held=null;return}}
+ if(S.scene==='splash')click(0,0)});
+async function boot(data){P=data;fit();S.scene='loading';requestAnimationFrame(loop);
+ try{const f=new FontFace('Amatic SC','url("'+url(M().font||'fonts/AmaticSC-Regular.ttf')+'")');document.fonts.add(await f.load())}catch(e){}
+ const paths=new Set([M().menuImage,M().cursor,M().voice]);const fd=M().framesDir||'images/character/';['left1','left2','right1','right2'].forEach(n=>paths.add(fd+n+'.png'));
+ P.items.forEach(i=>paths.add(i.icon));P.scenes.forEach(sc=>{paths.add(sc.bg);sc.sprites.forEach(s=>paths.add(s.img))});P.puzzles.forEach(p=>p.params&&paths.add(p.params.bg));
+ await Promise.all([...paths].filter(Boolean).map(loadImg));
+ const h=decodeURIComponent(window.START_HASH||location.hash.slice(1));
+ if(h.startsWith('pz=')){const id=h.slice(3),calls=P.scenes.filter(sc=>JSON.stringify(sc).includes('"puzzle":"'+id+'"'));S.scene='';startGame((calls[0]||{}).id||M().startScene);S.bubble=null;S.queue=[];openPuzzle(id)}
+ else if(h&&sceneById(h)){S.scene='';startGame(h)}else S.scene='splash'}
+window.GAME={S,P:()=>P,startGame,enterScene,openPuzzle,exitPuzzle,PZ,PUZZLES,dbgEnter};
+if(window.LEVELS)boot(window.LEVELS);else fetch('levels.json').then(r=>r.json()).then(boot).catch(e=>{document.body.innerHTML='<p style="color:#e6cd96;font:20px sans-serif;padding:20px">Нет данных уровней: встроенных нет и levels.json не загрузился ('+e.message+')</p>'});
+
 </script></body></html>
